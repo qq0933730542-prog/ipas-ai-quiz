@@ -3,119 +3,1472 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>iPAS AI 應用規劃師 - 全真模考題庫</title>
+  <title>iPAS AI 應用規劃師 - 終極備考系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .perspective-1000 { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+  </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-28">
 
-  <!-- 頂部導覽列 -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-2">
-        <span class="text-2xl">🧠</span>
-        <div>
-          <h1 class="text-sm font-bold text-slate-900 leading-tight">iPAS AI 全真模擬試卷</h1>
-          <span class="text-[11px] text-slate-500">測驗時間：75 分鐘 · 及格標準：70 分</span>
+  <!-- ==================== 1. 安全通行驗證門禁 ==================== -->
+  <div id="authGate" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
+      <div class="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 mx-auto mb-4 text-2xl">
+        🔒
+      </div>
+      <h2 class="text-base font-bold text-center text-slate-900 mb-1">私人備考系統</h2>
+      <p class="text-xs text-center text-slate-500 mb-5">請輸入通行密碼與安全驗證碼以解鎖內容</p>
+
+      <div class="mb-3">
+        <label class="block text-[11px] font-semibold text-slate-700 mb-1">通行密碼</label>
+        <input type="password" id="inputPassword" placeholder="請輸入密碼..." onkeydown="if(event.key==='Enter') handleUnlock()" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-[11px] font-semibold text-slate-700 mb-1">安全驗證碼</label>
+        <div class="flex items-center gap-2">
+          <input type="text" id="inputCaptcha" placeholder="輸入 4 碼" maxlength="4" onkeydown="if(event.key==='Enter') handleUnlock()" class="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <div id="captchaDisplay" onclick="refreshCaptcha()" title="點擊重新產生驗證碼" class="cursor-pointer select-none bg-slate-100 border border-slate-300 rounded-lg px-3 py-1.5 font-mono text-sm font-bold tracking-widest text-indigo-700 line-through decoration-slate-400">
+            ----
+          </div>
+          <button type="button" onclick="refreshCaptcha()" class="text-slate-500 hover:text-slate-800 p-1 text-sm font-bold">
+            🔄
+          </button>
         </div>
       </div>
-      <div class="flex items-center space-x-2">
-        <button onclick="openKeyModal()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-300">
-          🔑 <span id="keyStatusText">AI Key</span>
-        </button>
-        <button onclick="loadOfficial790()" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-2.5 py-1.5 rounded-lg transition">
-          📥 載入官方790題
-        </button>
-      </div>
+
+      <div id="authErrorMsg" class="hidden text-[11px] text-rose-600 font-medium mb-3 p-2 bg-rose-50 rounded-lg border border-rose-200"></div>
+
+      <button id="btnUnlock" onclick="handleUnlock()" class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-semibold py-2.5 rounded-lg transition shadow-sm cursor-pointer">
+        驗證並進入系統
+      </button>
     </div>
-  </header>
+  </div>
 
-  <!-- 主測驗區 -->
-  <main class="max-w-4xl mx-auto px-4 mt-6">
+  <!-- ==================== 2. 主應用程式 ==================== -->
+  <div id="mainApp" class="hidden">
+    <!-- 頂部導覽列 -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+      <div class="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="text-2xl">🧠</span>
+          <div>
+            <h1 class="text-sm font-bold text-slate-900 leading-tight">iPAS AI 終極備考系統</h1>
+            <span id="quizCountSummary" class="text-[10px] text-slate-500">載入中...</span>
+          </div>
+        </div>
 
-    <!-- 交卷後成績看板 -->
-    <div id="scoreReportCard" class="hidden bg-white border border-slate-200 p-6 rounded-2xl shadow-sm mb-6 text-center space-y-3">
-      <h2 id="resultTitle" class="text-lg font-bold"></h2>
-      <div class="grid grid-cols-4 gap-3 max-w-lg mx-auto text-center py-2">
-        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-          <span class="text-[10px] text-slate-400 block">總題數</span>
-          <span id="resTotal" class="text-lg font-bold text-slate-800">0</span>
-        </div>
-        <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
-          <span class="text-[10px] text-emerald-600 block">答對</span>
-          <span id="resCorrect" class="text-lg font-bold text-emerald-700">0</span>
-        </div>
-        <div class="bg-rose-50 p-2.5 rounded-xl border border-rose-200">
-          <span class="text-[10px] text-rose-600 block">答錯</span>
-          <span id="resWrong" class="text-lg font-bold text-rose-700">0</span>
-        </div>
-        <div class="bg-indigo-50 p-2.5 rounded-xl border border-indigo-200">
-          <span class="text-[10px] text-indigo-600 block">得分</span>
-          <span id="resScore" class="text-lg font-bold text-indigo-700">0</span>
+        <!-- 模組切換分頁導覽 -->
+        <nav class="flex items-center bg-slate-100 p-1 rounded-xl gap-1 text-xs font-medium text-slate-600">
+          <button onclick="switchTab('quiz')" id="tabBtn-quiz" class="tab-btn active bg-white text-indigo-600 px-3 py-1.5 rounded-lg shadow-xs transition">
+            📝 全真考場
+          </button>
+          <button onclick="switchTab('retry')" id="tabBtn-retry" class="tab-btn px-3 py-1.5 rounded-lg hover:text-slate-900 transition flex items-center gap-1">
+            🔁 錯題盲測 <span id="navWrongCount" class="bg-rose-100 text-rose-600 text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+          </button>
+          <button onclick="switchTab('concepts')" id="tabBtn-concepts" class="tab-btn px-3 py-1.5 rounded-lg hover:text-slate-900 transition">
+            📖 核心概念庫
+          </button>
+          <button onclick="switchTab('flashcards')" id="tabBtn-flashcards" class="tab-btn px-3 py-1.5 rounded-lg hover:text-slate-900 transition">
+            📇 記憶翻牌卡
+          </button>
+          <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="tab-btn px-3 py-1.5 rounded-lg hover:text-slate-900 transition">
+            📊 做題分析
+          </button>
+        </nav>
+
+        <div class="flex items-center space-x-2">
+          <button onclick="openKeySettings()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-slate-300">
+            🔑 <span id="keyStatusText">AI Key</span>
+          </button>
+          <button onclick="lockApp()" class="text-xs bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 px-2.5 py-1.5 rounded-lg border border-slate-300 transition" title="立即鎖定">
+            🔒
+          </button>
         </div>
       </div>
-      <p class="text-xs text-slate-500">已為您展開每題正解、解析與權威論文對照。答錯題目已自動收錄至錯題紀錄。</p>
-      <div class="flex justify-center gap-2 pt-1">
-        <button onclick="retryWrongOnly()" id="btnRetryWrong" class="hidden bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
-          🔁 只重練本次錯題
-        </button>
-        <button onclick="restartExam()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg border border-slate-300 transition">
-          🔄 重新測驗整份試卷
-        </button>
-      </div>
+    </header>
+
+    <div class="max-w-5xl mx-auto px-4 mt-5">
+
+      <!-- ==================== TAB 1: 全真考場（整卷作答 + 交卷按鈕 + 紅綠對照線） ==================== -->
+      <section id="tabContent-quiz" class="space-y-4">
+        <!-- 考場功能選單 -->
+        <div class="bg-indigo-900 text-white p-3.5 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="loadOfficial790()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3 py-1.5 rounded-lg transition">
+              📥 載入官方 790 題庫抽卷
+            </button>
+            <button onclick="startMockExam(50)" class="bg-indigo-700 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg transition">
+              ⏱️ 75分鐘模考 (50題)
+            </button>
+            <button onclick="restartExam()" class="bg-indigo-800 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition">
+              🔄 重新抽題測驗
+            </button>
+          </div>
+          <div id="examTimerContainer" class="hidden items-center bg-indigo-950 px-3 py-1 rounded-lg text-amber-300 font-mono font-bold">
+            ⏰ 剩餘：<span id="examTimer">75:00</span>
+          </div>
+        </div>
+
+        <!-- 交卷後的結算看板 -->
+        <div id="scoreReportCard" class="hidden bg-white border border-slate-200 p-6 rounded-2xl shadow-sm text-center space-y-3">
+          <h2 id="resultTitle" class="text-lg font-bold"></h2>
+          <div class="grid grid-cols-4 gap-3 max-w-lg mx-auto text-center py-2">
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <span class="text-[10px] text-slate-400 block">總題數</span>
+              <span id="resTotal" class="text-lg font-bold text-slate-800">0</span>
+            </div>
+            <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+              <span class="text-[10px] text-emerald-600 block">答對</span>
+              <span id="resCorrect" class="text-lg font-bold text-emerald-700">0</span>
+            </div>
+            <div class="bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+              <span class="text-[10px] text-rose-600 block">答錯</span>
+              <span id="resWrong" class="text-lg font-bold text-rose-700">0</span>
+            </div>
+            <div class="bg-indigo-50 p-2.5 rounded-xl border border-indigo-200">
+              <span class="text-[10px] text-indigo-600 block">得分</span>
+              <span id="resScore" class="text-lg font-bold text-indigo-700">0</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500">
+            下方已為您開啟<b>【詳細檢討模式】</b>：<span class="text-emerald-700 font-bold">綠色線為官方正解</span>、<span class="text-rose-700 font-bold">紅色線為您的錯誤選擇</span>，並附帶詳解與權威論文對照。
+          </p>
+          <div class="flex justify-center gap-2 pt-1">
+            <button onclick="retryWrongOnly()" id="btnRetryWrong" class="hidden bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+              🔁 僅重練本次錯題 (盲測)
+            </button>
+            <button onclick="restartExam()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2 rounded-lg border border-slate-300 transition">
+              🔄 重新測驗整份試卷
+            </button>
+          </div>
+        </div>
+
+        <!-- 題目列表渲染區 -->
+        <div id="quizContainer" class="space-y-4"></div>
+
+        <!-- 考卷底部常駐交卷欄 -->
+        <div id="submitBar" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 py-3 px-4 z-20">
+          <div class="max-w-5xl mx-auto flex items-center justify-between">
+            <div class="text-xs text-slate-500">
+              已作答 <span id="answeredCount" class="font-bold text-indigo-600">0</span> / <span id="totalExamCount" class="font-bold">0</span> 題
+            </div>
+            <button onclick="submitExam()" id="btnSubmitExam" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-sm transition cursor-pointer">
+              📝 完成作答，交卷看成績與檢討
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 2: 錯題盲測重練 ==================== -->
+      <section id="tabContent-retry" class="hidden space-y-4">
+        <div class="bg-rose-900 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-bold flex items-center gap-1.5">
+              <span>🔁</span> 錯題盲測重練考場
+            </h2>
+            <p class="text-xs text-rose-200 mt-0.5">歷史答案已遮蔽。重新獨立思考作答，答對後可一鍵移出錯題紀錄。</p>
+          </div>
+          <div class="text-xs font-bold bg-rose-950 px-3 py-1.5 rounded-lg border border-rose-800">
+            累積錯題：<span id="retryWrongTotal">0</span> 題
+          </div>
+        </div>
+
+        <div id="retryQuizContainer" class="space-y-4"></div>
+      </section>
+
+      <!-- ==================== TAB 3: 5 維度核心概念庫 ==================== -->
+      <section id="tabContent-concepts" class="hidden space-y-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <span>📖</span> iPAS 必考核心概念庫
+              </h2>
+              <p class="text-xs text-slate-500">涵蓋概念分析、底層架構、專有名詞、實戰手法與權威學術論文出處</p>
+            </div>
+            <div class="w-72">
+              <input type="text" id="conceptSearchInput" oninput="filterConcepts()" placeholder="搜尋概念、名詞、論文關鍵字..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-1.5 text-xs pt-1 border-t border-slate-100" id="conceptCategoryBar">
+            <button class="c-tag active bg-indigo-600 text-white px-2.5 py-1 rounded-lg font-medium" onclick="filterConceptCat('all', this)">全部領域</button>
+            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('機器學習基礎', this)">機器學習基礎</button>
+            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('深度學習架構', this)">深度學習架構</button>
+            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('提示工程與生成式AI', this)">提示工程與生成式AI</button>
+            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('RAG與向量系統', this)">RAG與向量系統</button>
+            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('AI倫理法規', this)">AI倫理法規</button>
+          </div>
+        </div>
+
+        <div id="conceptListContainer" class="space-y-4"></div>
+      </section>
+
+      <!-- ==================== TAB 4: 3D 記憶翻牌卡 (Flashcards) ==================== -->
+      <section id="tabContent-flashcards" class="hidden space-y-5">
+        <div class="bg-indigo-900 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-bold flex items-center gap-1.5">
+              <span>📇</span> 3D 記憶翻轉卡（主動回憶強化）
+            </h2>
+            <p class="text-xs text-indigo-200 mt-0.5">點擊卡片正面可翻轉查看底層架構、名詞解析與論文出處，標記熟練度進行間隔複習。</p>
+          </div>
+          <div class="text-xs font-medium">
+            掌握進度：<span id="fcMasteredCount" class="text-emerald-400 font-bold">0</span> / <span id="fcTotalCount">0</span> 張
+          </div>
+        </div>
+
+        <div class="max-w-xl mx-auto">
+          <div id="flashcardBox" onclick="flipCard()" class="perspective-1000 w-full h-80 cursor-pointer select-none">
+            <div id="flashcardInner" class="relative w-full h-full transform-style-3d transition-transform duration-500 rounded-2xl shadow-md border border-slate-200 bg-white">
+              <!-- 正面 -->
+              <div class="absolute inset-0 backface-hidden p-6 flex flex-col justify-between rounded-2xl bg-white">
+                <div class="flex justify-between items-center text-xs text-slate-400">
+                  <span id="fcCategory" class="bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded">分類</span>
+                  <span id="fcIndex" class="font-mono">1 / 10</span>
+                </div>
+                <div class="my-auto text-center px-4">
+                  <span class="text-xs text-slate-400 block mb-2 font-medium">【核心考點問題】</span>
+                  <h3 id="fcFrontText" class="text-base font-bold text-slate-900 leading-relaxed">問題載入中...</h3>
+                </div>
+                <div class="text-center text-slate-400 text-[11px]">
+                  👆 點擊卡片翻轉看答案與架構
+                </div>
+              </div>
+
+              <!-- 背面 -->
+              <div class="absolute inset-0 backface-hidden rotate-y-180 p-6 flex flex-col justify-between rounded-2xl bg-slate-900 text-white overflow-y-auto">
+                <div class="flex justify-between items-center text-xs text-slate-400 border-b border-slate-800 pb-2">
+                  <span class="text-emerald-400 font-semibold">💡 核心解析與記憶重點</span>
+                  <span class="text-[10px] text-slate-400">點擊任意處翻回</span>
+                </div>
+                <div class="my-auto space-y-2 py-2 text-xs">
+                  <p id="fcBackAnswer" class="text-slate-200 leading-relaxed font-medium"></p>
+                  <div class="p-2.5 rounded bg-slate-800/80 border border-slate-700 text-[11px] text-indigo-300">
+                    <span class="font-bold block text-indigo-400">底層機制 / 手法：</span>
+                    <span id="fcBackMethod"></span>
+                  </div>
+                  <div class="text-[10px] text-slate-400">
+                    📜 權威論文出處：<span id="fcBackPaper" class="text-slate-300 underline"></span>
+                  </div>
+                </div>
+                <div class="text-center text-slate-500 text-[10px]">
+                  點擊翻回正面
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between mt-4">
+            <button onclick="prevFlashcard()" class="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700">
+              ⬅️ 上一張
+            </button>
+            <div class="flex gap-2">
+              <button onclick="markCardMastery(false)" class="px-3 py-1.5 text-xs bg-rose-50 border border-rose-200 text-rose-700 font-medium rounded-lg hover:bg-rose-100">
+                😅 還不熟
+              </button>
+              <button onclick="markCardMastery(true)" class="px-3 py-1.5 text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium rounded-lg hover:bg-emerald-100">
+                ✅ 已記住
+              </button>
+            </div>
+            <button onclick="nextFlashcard()" class="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700">
+              下一張 ➡️
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 5: 做題分析與弱點診斷 ==================== -->
+      <section id="tabContent-analytics" class="hidden space-y-5">
+        <div class="grid grid-cols-4 gap-3 text-center">
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <span class="text-slate-400 text-[11px] block">作答題數</span>
+            <span id="anTotal" class="text-xl font-bold text-slate-900">0</span>
+          </div>
+          <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 shadow-xs">
+            <span class="text-emerald-600 text-[11px] block">答對題數</span>
+            <span id="anCorrect" class="text-xl font-bold text-emerald-700">0</span>
+          </div>
+          <div class="bg-rose-50 p-4 rounded-2xl border border-rose-200 shadow-xs">
+            <span class="text-rose-600 text-[11px] block">答錯題數</span>
+            <span id="anWrong" class="text-xl font-bold text-rose-700">0</span>
+          </div>
+          <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-200 shadow-xs">
+            <span class="text-indigo-600 text-[11px] block">整體正確率</span>
+            <span id="anAccuracy" class="text-xl font-bold text-indigo-700">0%</span>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+          <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+            <h3 class="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+              <span>📊</span> 各考點領域掌握度分佈
+            </h3>
+            <span class="text-[10px] text-slate-400">綠色 ≥75% 精通 / 黃色 60-74% / 紅色 &lt;60% 弱項</span>
+          </div>
+          <div id="categoryBars" class="space-y-2.5 text-xs">
+            <div class="text-slate-400 text-center py-6">尚未有作答紀錄，請於考場作答交卷後查看！</div>
+          </div>
+        </div>
+
+        <div class="border border-indigo-200 bg-indigo-50/50 p-5 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-xs text-indigo-950 flex items-center gap-1.5">
+              <span>🤖</span> AI 考前弱點處方籤與複習指引
+            </h3>
+            <button onclick="generateAIWeaknessReport()" id="btnGenAIReport" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+              一鍵生成弱點診斷
+            </button>
+          </div>
+          <div id="aiWeaknessContent" class="text-slate-700 leading-relaxed whitespace-pre-wrap text-xs bg-white p-4 rounded-xl border border-indigo-100 min-h-[80px]">
+            點擊右上角按鈕，AI 助教會根據你交卷後的錯題章節與答對率，為你量身打造考前 7 天專屬補強清單。
+          </div>
+        </div>
+
+        <div class="text-right pt-2">
+          <button onclick="resetAllStats()" class="text-rose-600 hover:text-rose-800 text-xs font-medium underline">
+            🗑️ 清除所有做題與錯題紀錄重新開始
+          </button>
+        </div>
+      </section>
+
     </div>
+  </div>
 
-    <!-- 考題容器 -->
-    <div id="examContainer" class="space-y-4"></div>
-
-    <!-- 底部常駐交卷欄 -->
-    <div id="submitBar" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 py-3 px-4 z-20">
-      <div class="max-w-4xl mx-auto flex items-center justify-between">
-        <div class="text-xs text-slate-500">
-          已作答 <span id="answeredCount" class="font-bold text-indigo-600">0</span> / <span id="totalExamCount" class="font-bold">0</span> 題
-        </div>
-        <button onclick="submitExam()" id="btnSubmitExam" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-sm transition cursor-pointer">
-          📝 完成作答，交卷看成績
-        </button>
-      </div>
-    </div>
-  </main>
-
-  <!-- AI 助教常駐懸浮鈕 -->
-  <div class="fixed bottom-16 right-6 z-30">
-    <button onclick="toggleChat()" class="bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-full shadow-lg flex items-center gap-1.5 text-xs font-semibold">
-      ✨ <span>AI 助教</span>
+  <!-- ==================== 4. 右下角常駐：AI 即時聯網助教 ==================== -->
+  <div class="fixed bottom-16 right-6 z-40">
+    <button onclick="toggleChatDrawer()" class="bg-indigo-600 hover:bg-indigo-700 text-white p-3.5 rounded-full shadow-lg flex items-center gap-2 transition hover:scale-105">
+      ✨ <span class="text-xs font-semibold pr-1">AI 聯網助教</span>
     </button>
   </div>
 
-  <!-- AI 抽屜 -->
-  <div id="chatDrawer" class="fixed bottom-28 right-6 w-96 max-w-[calc(100vw-3rem)] h-[460px] bg-white rounded-2xl shadow-2xl border border-slate-200 z-40 flex flex-col hidden overflow-hidden text-xs">
-    <div class="bg-indigo-600 text-white p-3 flex justify-between items-center">
-      <span class="font-bold flex items-center gap-1">🤖 AI 即時聯網論文助教</span>
-      <button onclick="toggleChat()" class="font-bold">✕</button>
+  <!-- AI 即時對話抽屜 -->
+  <div id="chatDrawer" class="fixed bottom-28 right-6 w-96 max-w-[calc(100vw-3rem)] h-[500px] bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 flex flex-col hidden overflow-hidden text-xs">
+    <div class="bg-indigo-600 text-white px-4 py-3 flex items-center justify-between">
+      <div>
+        <h4 class="text-xs font-bold leading-tight flex items-center gap-1">🤖 AI 聯網即時助教</h4>
+        <span class="text-[10px] text-indigo-200">🟢 具備 Google 即時搜尋與論文溯源</span>
+      </div>
+      <button onclick="toggleChatDrawer()" class="text-indigo-200 hover:text-white font-bold text-sm">✕</button>
     </div>
-    <div id="chatMessages" class="flex-1 p-3 overflow-y-auto space-y-2 bg-slate-50">
-      <div class="bg-white p-2.5 rounded-xl border border-slate-200 text-slate-600">
-        你好！我是備考助教。你可以隨時向我提問題目概念或查詢權威論文出處。
+
+    <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50">
+      <div class="bg-white border border-slate-200 p-3 rounded-xl shadow-xs text-slate-700">
+        你好！我是你的 iPAS AI 備考即時助教。你可以隨時問我：
+        <ul class="list-disc pl-4 mt-1 space-y-0.5 text-slate-500">
+          <li>機器學習與深度學習核心公式與概念</li>
+          <li>檢索開創性論文出處（如 Transformer、RAG、LoRA）</li>
+          <li>詢問歷屆容易混淆的單選陷阱</li>
+        </ul>
       </div>
     </div>
-    <div class="p-2.5 bg-white border-t border-slate-200 flex gap-1.5">
-      <input type="text" id="chatInput" placeholder="問問題（如：RAG 論文核心機制）..." onkeydown="if(event.key==='Enter') sendChat()" class="flex-1 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-      <button onclick="sendChat()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-bold">送出</button>
+
+    <div class="p-3 bg-white border-t border-slate-200">
+      <div class="flex items-center gap-2">
+        <input type="text" id="chatInput" placeholder="輸入問題（如：查詢 RAG 的開創論文）..." onkeydown="if(event.key==='Enter') sendChat()" class="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <button onclick="sendChat()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-xs font-bold">送出</button>
+      </div>
     </div>
   </div>
 
-  <!-- API Key 彈窗 -->
-  <div id="keyModal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-xl border border-slate-200 text-xs">
-      <h3 class="font-bold mb-2">🔑 設定 Gemini API Key</h3>
-      <input type="password" id="apiKeyInput" placeholder="貼上 Google AI Studio Key..." class="w-full border border-slate-300 rounded-lg p-2 mb-3" />
-      <div class="flex justify-end gap-2">
-        <button onclick="closeKeyModal()" class="px-3 py-1.5 text-slate-600">取消</button>
-        <button onclick="saveKey()" class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg">儲存</button>
+  <!-- API Key 設定彈窗 -->
+  <div id="keyModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+      <h3 class="text-base font-bold text-slate-900 mb-2">🔑 設定 Gemini API Key</h3>
+      <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+        可至 <a href="https://aistudio.google.com/" target="_blank" class="text-indigo-600 underline font-semibold">Google AI Studio</a> 免費取得 API Key。金鑰僅儲存在本地瀏覽器。
+      </p>
+      <input type="password" id="geminiApiKeyInput" placeholder="貼上 API Key..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4" />
+      <div class="flex justify-end space-x-2">
+        <button onclick="closeKeySettings()" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+        <button onclick="saveKeySettings()" class="px-4 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">儲存</button>
       </div>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- ==================== 5. 核心 JavaScript 邏輯 ==================== -->
+  <script>
+    // 預設通行密碼（後台驗證常數，前台介面無任何明文顯示）
+    const CORRECT_PASSWORD = "ipas2026";
+    let currentCaptcha = "";
+    let isMemoryAuthed = false;
+
+    // 安全 Storage 操作 (全面相容 Safari 無痕模式)
+    function safeStorageGet(key) {
+      try { return sessionStorage.getItem(key); } catch (e) { return null; }
+    }
+    function safeStorageSet(key, val) {
+      try { sessionStorage.setItem(key, val); } catch (e) {}
+    }
+    function safeStorageRemove(key) {
+      try { sessionStorage.removeItem(key); } catch (e) {}
+    }
+
+    function generateCaptcha() {
+      const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+      let code = "";
+      for (let i = 0; i < 4; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    function refreshCaptcha() {
+      currentCaptcha = generateCaptcha();
+      const el = document.getElementById("captchaDisplay");
+      if (el) el.innerText = currentCaptcha;
+    }
+
+    function checkAuthStatus() {
+      const isAuthed = safeStorageGet("IPAS_APP_AUTH") === "true" || isMemoryAuthed;
+      const gate = document.getElementById("authGate");
+      const app = document.getElementById("mainApp");
+
+      if (isAuthed) {
+        gate.classList.add("hidden");
+        app.classList.remove("hidden");
+        initApp();
+      } else {
+        gate.classList.remove("hidden");
+        app.classList.add("hidden");
+        refreshCaptcha();
+      }
+    }
+
+    function handleUnlock() {
+      const pwdInput = document.getElementById("inputPassword");
+      const captchaInput = document.getElementById("inputCaptcha");
+      const err = document.getElementById("authErrorMsg");
+
+      const pwd = pwdInput ? pwdInput.value.trim() : "";
+      const captcha = captchaInput ? captchaInput.value.trim().toUpperCase() : "";
+
+      if (pwd !== CORRECT_PASSWORD) {
+        err.innerText = "通行密碼錯誤，請重新輸入！";
+        err.classList.remove("hidden");
+        refreshCaptcha();
+        if (captchaInput) captchaInput.value = "";
+        return;
+      }
+
+      if (captcha !== currentCaptcha) {
+        err.innerText = "驗證碼錯誤，請輸入右側顯示的 4 碼！";
+        err.classList.remove("hidden");
+        refreshCaptcha();
+        if (captchaInput) captchaInput.value = "";
+        return;
+      }
+
+      err.classList.add("hidden");
+      safeStorageSet("IPAS_APP_AUTH", "true");
+      isMemoryAuthed = true;
+      checkAuthStatus();
+    }
+
+    function lockApp() {
+      safeStorageRemove("IPAS_APP_AUTH");
+      isMemoryAuthed = false;
+      checkAuthStatus();
+    }
+
+    // ==================== 模組分頁切換 ====================
+    function switchTab(tabId) {
+      const tabs = ["quiz", "retry", "concepts", "flashcards", "analytics"];
+      tabs.forEach(t => {
+        const content = document.getElementById(`tabContent-${t}`);
+        const btn = document.getElementById(`tabBtn-${t}`);
+        if (t === tabId) {
+          content.classList.remove("hidden");
+          btn.classList.add("bg-white", "text-indigo-600", "shadow-xs");
+          btn.classList.remove("text-slate-600");
+        } else {
+          content.classList.add("hidden");
+          btn.classList.remove("bg-white", "text-indigo-600", "shadow-xs");
+          btn.classList.add("text-slate-600");
+        }
+      });
+
+      if (tabId === "retry") renderRetryQuestions();
+      if (tabId === "concepts") renderConcepts();
+      if (tabId === "flashcards") renderFlashcard();
+      if (tabId === "analytics") updateAnalyticsView();
+    }
+
+    // ==================== 核心題庫（預設 10 道標準全真考題） ====================
+    const initialExamQuestions = [
+      {
+        id: "1",
+        subject: "初級科目一",
+        category: "機器學習基礎",
+        question: "在機器學習任務中，若希望根據房屋的坪數、屋齡與地段來預測其成交價格（連續數值），應採用下列何種模型？",
+        options: { "A": "分群（Clustering）", "B": "迴歸（Regression）", "C": "關聯規則（Association Rule）", "D": "主成分分析（PCA）" },
+        answer: ["B"],
+        explanation: "預測連續數值目標屬於監督式學習中的『迴歸』任務；分類任務預測離散類別，分群與降維則多為非監督式學習。",
+        paper: "Hastie et al. - 《The Elements of Statistical Learning》"
+      },
+      {
+        id: "2",
+        subject: "初級科目一",
+        category: "模型評估指標",
+        question: "在醫療診斷或罕見疾病篩檢情境中，最希望避免『有病卻被誤判為沒病（漏診）』的情況，此時最應優先追求哪一項評估指標的極大化？",
+        options: { "A": "精確率（Precision）", "B": "召回率（Recall / Sensitivity）", "C": "特異度（Specificity）", "D": "準確率（Accuracy）" },
+        answer: ["B"],
+        explanation: "漏診代表偽陰性（False Negative, FN）。Recall = TP / (TP + FN)，當 FN 越小，Recall 越高。因此避免漏診時應優先提升 Recall。",
+        paper: "Davis & Goadrich, ICML 2006 - 《The Relationship Between Precision-Recall and ROC Curves》"
+      },
+      {
+        id: "3",
+        subject: "初級科目一",
+        category: "過擬合與正規化",
+        question: "當神經網路在訓練集上表現極佳，但在測試集上泛化能力很差時，下列哪項手法『無法』有效減緩過擬合？",
+        options: { "A": "加入 Dropout 機制", "B": "加入 L2 正則化（Weight Decay）", "C": "大幅增加網路隱藏層的神經元數量與深度", "D": "增加訓練資料多樣性（Data Augmentation）" },
+        answer: ["C"],
+        explanation: "大幅增加神經元數量與深度會提高模型容量（Capacity），反而會加劇過擬合。其餘三項皆為抑制過擬合的標準手段。",
+        paper: "Srivastava et al., JMLR 2014 - 《Dropout: A Simple Way to Prevent Overfitting》"
+      },
+      {
+        id: "4",
+        subject: "初級科目二",
+        category: "RAG與向量系統",
+        question: "企業在導入大型語言模型（LLM）建置內部知識庫時，為了降低『幻覺（Hallucination）』並補充內部最新私有資料，最常採取的低成本架構為何？",
+        options: { "A": "從頭重新預訓練基底大模型", "B": "檢索增強生成（Retrieval-Augmented Generation, RAG）", "C": "大幅調高模型的 Temperature 參數", "D": "使用全參數量微調（Full Fine-Tuning）" },
+        answer: ["B"],
+        explanation: "RAG 透過向量比對先從內部庫取得文件片段作為 Context 注入 Prompt，由 LLM 整理回答，成本低且能大幅緩解幻覺。",
+        paper: "Lewis et al., NeurIPS 2020 - 《Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks》"
+      },
+      {
+        id: "5",
+        subject: "初級科目二",
+        category: "提示工程與生成式AI",
+        question: "在 Prompt Engineering 中，要求模型在給出答案前先輸出中間推導步驟（如：『請一步一步思考』），此手法稱為？",
+        options: { "A": "Zero-shot Prompting", "B": "思維鏈（Chain-of-Thought, CoT）", "C": "Prompt 注入攻擊", "D": "量化壓縮（Quantization）" },
+        answer: ["B"],
+        explanation: "思維鏈（CoT）引導模型展開中間步驟推理，能顯著提升複雜邏輯與算術題目的正確率。",
+        paper: "Wei et al., NeurIPS 2022 - 《Chain-of-Thought Prompting Elicits Reasoning in Large Language Models》"
+      },
+      {
+        id: "6",
+        subject: "初級科目二",
+        category: "模型參數調校",
+        question: "在呼叫生成式 AI API 時，若希望模型生成的回答具備更高的創造力與多樣性，通常應如何調整 Temperature 參數？",
+        options: { "A": "調低接近 0（如 0.1）", "B": "調高（如 0.8 ~ 1.0）", "C": "將 Temperature 設為負數", "D": "Temperature 與創造力無關" },
+        answer: ["B"],
+        explanation: "Temperature 決定輸出機率分佈平滑度。越接近 0 越偏向 Greedy 確定性輸出；調高會使低機率 Token 更有機會被選中，增加創造力與隨機性。",
+        paper: "Ackley et al., 1985 - 《A Learning Algorithm for Boltzmann Machines》"
+      },
+      {
+        id: "7",
+        subject: "初級科目一",
+        category: "特徵工程與資料前處理",
+        question: "在特徵縮放（Feature Scaling）中，將數值特徵線性變換縮放至 區間的方法稱為？",
+        options: { "A": "Z-score 標準化（Standardization）", "B": "最小最大值正規化（Min-Max Normalization）", "C": "主成分分析（PCA）", "D": "One-Hot 編碼" },
+        answer: ["B"],
+        explanation: "Min-Max Normalization 公式為 (X - Xmin) / (Xmax - Xmin)，將資料線性對齊至；Z-score 是將平均數轉為 0、標準差轉為 1。",
+        paper: "Scikit-Learn Preprocessing Documentation"
+      },
+      {
+        id: "8",
+        subject: "初級科目二",
+        category: "AI倫理法規",
+        question: "依據台灣國科會《人工智慧基本法（草案）》與數位發展部公部門 AI 應用指引，下列哪項敘述為正確的核心原則？",
+        options: { "A": "公務機關可直接將高度機密公文上傳至未授權之公有雲 AI 模型分析", "B": "AI 系統產出之內容應具備透明性與可解釋性，並由人類負最終決策責任", "C": "生成式 AI 生成之內容具有絕對法律權利，可直接列為專利發明人", "D": "導入 AI 應完全取代人類審查，不得保留人工覆核環節" },
+        answer: ["B"],
+        explanation: "AI 倫理與各國指引一致強調 Human-in-the-loop（人機協作/人為最終問責），AI 不具備法律主體專利人地位，機密公文亦嚴禁上傳未授權公有雲。",
+        paper: "台灣國科會《人工智慧基本法（草案）》& NIST AI RMF 1.0"
+      },
+      {
+        id: "9",
+        subject: "初級科目一",
+        category: "深度學習架構",
+        question: "在卷積神經網路（CNN）中，『池化層（Pooling Layer，如 Max Pooling）』的主要功能為何？",
+        options: { "A": "計算損失函數的梯度", "B": "降低特徵維度、減少參數量並保留主要特徵", "C": "將連續數值轉換為文字標籤", "D": "取代 Softmax 進行最後分類" },
+        answer: ["B"],
+        explanation: "池化層用於降低特徵圖（Feature Map）空間維度，減少計算量與防止過擬合，同時具備一定的平移不變性。",
+        paper: "LeCun et al., 1998 - 《Gradient-Based Learning Applied to Document Recognition》"
+      },
+      {
+        id: "10",
+        subject: "初級科目二",
+        category: "模型微調技術",
+        question: "在大型語言模型的高效微調技術中，LoRA（Low-Rank Adaptation）的核心原理為何？",
+        options: { "A": "凍結預訓練權重，透過引入低秩矩陣分解來訓練額外參數", "B": "將模型參數量修剪掉 90% 來提升推論速度", "C": "直接在提示詞前端拼接人工撰寫的樣板", "D": "將模型權重全數轉為 1-bit 二值化" },
+        answer: ["A"],
+        explanation: "LoRA 凍結原有大模型權重 W，透過旁路學習兩個低秩分解矩陣 A 與 B（ΔW = B × A），大幅降低微調所需的 GPU 顯存與可訓練參數量。",
+        paper: "Hu et al., ICLR 2022 - 《LoRA: Low-Rank Adaptation of Large Language Models》"
+      }
+    ];
+
+    // ==================== 5 維度核心概念庫資料庫 ====================
+    const conceptDatabase = [
+      {
+        id: "rag_architecture",
+        title: "檢索增強生成 (RAG)",
+        category: "RAG與向量系統",
+        analysis: "解決大型語言模型（LLM）無法即時更新內部權重、無法取得企業內部私有資料以及產生事實幻覺（Hallucination）三大難題。在不修改模型權重的前提下外掛專屬知識庫。",
+        pipeline: "【文本資料切塊 Chunking】 ➔ 【向量模型轉換 Embeddings】 ➔ 【儲存至向量庫 Vector DB】 ➔ 【提問比對 Top-K 檢索】 ➔ 【上下文注入 Context 擴增提示】 ➔ 【LLM 生成精準回答】",
+        glossary: "Chunk Overlap (重疊切分防止斷意)、Cosine Similarity (餘弦相似度比對)、Embedding Dimension (維度空間)、Top-K (選取最相關文件篇數)、Temperature (解碼發散度控制)。",
+        techniques: "• Hybrid Search：結合傳統 BM25 關鍵字搜尋與向量語意搜尋。\n• Re-ranking：檢索後透過專用 Cross-Encoder 重排序提升精準度。\n• Parent-Child Chunking：檢索小區塊，回填所屬完整大章節上下文。",
+        paper: "Lewis et al., NeurIPS 2020 - 《Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks》",
+        paper_url: "https://arxiv.org/abs/2005.11401"
+      },
+      {
+        id: "prompt_cot",
+        title: "思維鏈提示 (Chain-of-Thought, CoT)",
+        category: "提示工程與生成式AI",
+        analysis: "傳統 Prompt 直接要求模型給予最終答案，遇到多步驟邏輯或數學題極易出錯。CoT 引導模型把複雜問題拆解為步驟依序推理。",
+        pipeline: "【輸入問題】 ➔ 【激發提示（如：Let's think step by step）】 ➔ 【逐步產生中間推論 Token】 ➔ 【依據推論路徑輸出最終結論】",
+        glossary: "Zero-shot CoT (直接加入口訣觸發推理)、Few-shot CoT (給予包含推導過程的範例)、ToT (Tree of Thoughts 思維樹分支推演)。",
+        techniques: "• 角色扮演法（System Role）：先賦予專業專家身分。\n• 結構化格式規範：強制要求以 JSON 或 Markdown 列點逐步推演。\n• 自我一致性採樣（Self-Consistency）：多路徑推演取眾數答案。",
+        paper: "Wei et al., NeurIPS 2022 - 《Chain-of-Thought Prompting Elicits Reasoning in Large Language Models》",
+        paper_url: "https://arxiv.org/abs/2201.11903"
+      },
+      {
+        id: "transformer_attention",
+        title: "Transformer 與自注意力機制",
+        category: "深度學習架構",
+        analysis: "徹底取代傳統 RNN 無法平行運算與容易遺忘長期依賴的缺點，是當代所有大語言模型（GPT、Claude、Gemini）與大視覺模型的共同底層架構。",
+        pipeline: "【輸入文字 Embedding】 ➔ 【注入位置編碼 Positional Encoding】 ➔ 【Q(Query), K(Key), V(Value) 矩陣點積注意力度】 ➔ 【Multi-Head 多頭投影】 ➔ 【Feed-Forward 前饋網路與殘差連接】",
+        glossary: "Self-Attention (自注意力權重計算)、Multi-Head Attention (多角度特徵擷取)、Softmax 權重歸一化、Residual Connection (殘差連接解決梯度消失)。",
+        techniques: "• Scaling Factor (除以根號 dk 防止 Softmax 梯度飽和)\n• Causal Masking (在解碼器中遮蔽未來 Token 防止答案洩漏)\n• FlashAttention (GPU 記憶體存取優化)",
+        paper: "Vaswani et al., NeurIPS 2017 - 《Attention Is All You Need》",
+        paper_url: "https://arxiv.org/abs/1706.03762"
+      },
+      {
+        id: "model_overfitting",
+        title: "過擬合治理與正規化 (Regularization)",
+        category: "機器學習基礎",
+        analysis: "當模型在訓練集表現近乎完美，但在未見過的測試集上表現低落，即為高變異數（High Variance）的過擬合現象。模型過度記憶雜訊。",
+        pipeline: "【監測驗證集損失 Validation Loss】 ➔ 【若訓練損失下降但驗證損失上升】 ➔ 【啟動正則化懲罰 / Dropout / 提早停止機制】",
+        glossary: "Bias-Variance Tradeoff (偏差變異數權衡)、L1 正則化 (Lasso, 產生稀疏權重)、L2 正則化 (Ridge, 權重衰減 Weight Decay)、Dropout (隨機拋棄神經節點)。",
+        techniques: "• Data Augmentation：翻轉、旋轉、加雜訊擴增訓練資料。\n• Early Stopping：當驗證損失連續 N 個 Epoch 未下降即中斷訓練。\n• Dropout 比例設定（通常為 0.2 ~ 0.5）。",
+        paper: "Srivastava et al., JMLR 2014 - 《Dropout: A Simple Way to Prevent Neural Networks from Overfitting》",
+        paper_url: "https://jmlr.org/papers/v15/srivastava14a.html"
+      },
+      {
+        id: "ai_governance",
+        title: "AI 倫理、治理與法規標準",
+        category: "AI倫理法規",
+        analysis: "iPAS 必考高頻題目，強調技術落地時必須兼顧可信任度、公平性、個人資料保護與演算法可解釋性。",
+        pipeline: "【風險評估與分類】 ➔ 【數據隱私與去識別化】 ➔ 【演算法偏見審查 Bias Audit】 ➔ 【人機協作 Human-in-the-loop 覆核】",
+        glossary: "可信任 AI (Trustworthy AI)、數據毒化 (Data Poisoning)、演算法偏見 (Algorithmic Bias)、版權與合理使用 (Fair Use)。",
+        techniques: "• 採用 ISO/IEC 42001 人工智慧管理系統作為內部合規標準。\n• 遵循台灣數位發展部《公部門 AI 應用參考手冊》規範公文書產出。\n• 敏感個人資料嚴禁直接傳送至公有雲未授權模型。",
+        paper: "NIST AI RMF 1.0 (2023) & 台灣國科會《人工智慧基本法（草案）》",
+        paper_url: "https://www.nist.gov/itl/ai-risk-management-framework"
+      }
+    ];
+
+    let examQuestions = [...initialExamQuestions];
+    let userAnswers = {}; // { qId: ["A"] }
+    let isSubmitted = false;
+    let lastWrongQuestions = [];
+    let wrongQuestions = [];
+    let topicAnalytics = {};
+    let flashcardList = [];
+    let currentFcIndex = 0;
+    let timerInterval = null;
+
+    try {
+      wrongQuestions = JSON.parse(localStorage.getItem("IPAS_WRONG_QUESTIONS") || "[]");
+      topicAnalytics = JSON.parse(localStorage.getItem("IPAS_TOPIC_STATS") || "{}");
+    } catch(e) {}
+
+    function initApp() {
+      updateWrongBadge();
+      updateSummary();
+      updateKeyStatus();
+      initFlashcards();
+      restartExam();
+    }
+
+    function updateSummary() {
+      document.getElementById("quizCountSummary").innerText = `全真題庫 ${examQuestions.length} 題 · 核心概念庫 ${conceptDatabase.length} 篇`;
+    }
+
+    function updateWrongBadge() {
+      document.getElementById("navWrongCount").innerText = wrongQuestions.length;
+      const rTot = document.getElementById("retryWrongTotal");
+      if (rTot) rTot.innerText = wrongQuestions.length;
+    }
+
+    // 重新開始試卷
+    function restartExam() {
+      isSubmitted = false;
+      userAnswers = {};
+      document.getElementById("scoreReportCard").classList.add("hidden");
+      document.getElementById("submitBar").classList.remove("hidden");
+      document.getElementById("totalExamCount").innerText = examQuestions.length;
+      updateAnsweredCount();
+      renderExamQuestions();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // 渲染試卷全部題目（作答時絕不劇透）
+    function renderExamQuestions() {
+      const container = document.getElementById("quizContainer");
+      container.innerHTML = "";
+
+      examQuestions.forEach((q, idx) => {
+        const card = document.createElement("div");
+        card.id = `qCard-${q.id}`;
+        card.className = "bg-white border border-slate-200 rounded-2xl p-5 shadow-xs transition";
+
+        const isMulti = q.type === "multiple" || q.answer.length > 1;
+        const inputType = isMulti ? "checkbox" : "radio";
+        const userSelected = userAnswers[q.id] || [];
+
+        let optionsHtml = Object.entries(q.options).map(([optKey, optVal]) => {
+          const isChecked = userSelected.includes(optKey);
+          let optStyle = "border-slate-200 hover:bg-slate-50";
+
+          // 交卷後紅綠對照線
+          if (isSubmitted) {
+            const isCorrectOpt = q.answer.includes(optKey);
+            if (isCorrectOpt) {
+              optStyle = "bg-emerald-50 border-emerald-500 text-emerald-950 font-bold ring-1 ring-emerald-400";
+            } else if (isChecked && !isCorrectOpt) {
+              optStyle = "bg-rose-50 border-rose-500 text-rose-950 line-through ring-1 ring-rose-400";
+            }
+          }
+
+          return `
+            <label class="flex items-start p-3 border rounded-xl cursor-pointer transition ${optStyle}">
+              <input type="${inputType}" name="exam-q-${q.id}" value="${optKey}" 
+                ${isChecked ? "checked" : ""} 
+                ${isSubmitted ? "disabled" : ""}
+                onchange="handleSelectOption('${q.id}', '${optKey}', ${isMulti})"
+                class="mt-0.5 text-indigo-600 focus:ring-indigo-500 rounded border-slate-300">
+              <span class="ml-3 text-xs leading-relaxed">
+                <strong class="mr-1">${optKey}.</strong> ${optVal}
+                ${isSubmitted && q.answer.includes(optKey) ? " <span class='text-emerald-700 ml-1 font-bold'>✓ 正確答案</span>" : ""}
+                ${isSubmitted && isChecked && !q.answer.includes(optKey) ? " <span class='text-rose-700 ml-1 font-bold'>✗ 你的選擇</span>" : ""}
+              </span>
+            </label>
+          `;
+        }).join("");
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+            <span class="bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded">第 ${idx + 1} 題 · ${q.subject || '考題'}</span>
+            <span>${isMulti ? '【多選題】' : '【單選題】'} · ${q.category || ''}</span>
+          </div>
+
+          <p class="text-sm font-medium text-slate-900 mb-4 leading-normal">${q.question}</p>
+          <div class="space-y-2 mb-3">${optionsHtml}</div>
+
+          <!-- 交卷後顯示詳解、觀念卡與論文出處 -->
+          <div id="feedback-${q.id}" class="${isSubmitted ? '' : 'hidden'} mt-4 pt-3 border-t border-slate-100 space-y-2 text-xs">
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 leading-relaxed">
+              <span class="font-bold block text-slate-900 mb-1">💡 官方詳解：</span>
+              ${q.explanation || '暫無解析'}
+            </div>
+            ${q.paper ? `
+            <div class="p-2.5 bg-indigo-50/60 border border-indigo-100 rounded-xl text-indigo-900 leading-relaxed text-[11px]">
+              <span class="font-bold">📜 權威論文 / 規範出處：</span>${q.paper}
+            </div>` : ''}
+            <div class="flex justify-between items-center pt-1">
+              <button onclick="addQuestionToFlashcard('${q.id}')" class="text-xs text-slate-500 hover:text-indigo-600">
+                📇 轉為記憶翻牌卡
+              </button>
+              <button onclick="askQuestionAI('${q.id}')" class="text-indigo-600 hover:underline text-xs font-semibold">
+                ✨ 請 AI 助教深入解說此題
+              </button>
+            </div>
+            <div id="aiReply-${q.id}" class="hidden p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-950 whitespace-pre-wrap leading-relaxed text-xs"></div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function handleSelectOption(qId, optKey, isMulti) {
+      if (isSubmitted) return;
+
+      if (isMulti) {
+        if (!userAnswers[qId]) userAnswers[qId] = [];
+        const idx = userAnswers[qId].indexOf(optKey);
+        if (idx > -1) userAnswers[qId].splice(idx, 1);
+        else userAnswers[qId].push(optKey);
+      } else {
+        userAnswers[qId] = [optKey];
+      }
+
+      updateAnsweredCount();
+    }
+
+    function updateAnsweredCount() {
+      const answered = Object.values(userAnswers).filter(ans => ans.length > 0).length;
+      document.getElementById("answeredCount").innerText = answered;
+    }
+
+    // 交卷計算成績與展開紅綠對照線
+    function submitExam() {
+      const answered = Object.values(userAnswers).filter(ans => ans.length > 0).length;
+      const total = examQuestions.length;
+
+      if (answered < total) {
+        if (!confirm(`您還有 ${total - answered} 題尚未作答，確定現在交卷嗎？`)) {
+          return;
+        }
+      }
+
+      isSubmitted = true;
+      document.getElementById("submitBar").classList.add("hidden");
+
+      let correctCount = 0;
+      lastWrongQuestions = [];
+
+      examQuestions.forEach(q => {
+        const userSelected = (userAnswers[q.id] || []).sort();
+        const correctAns = [...q.answer].sort();
+        const isCorrect = JSON.stringify(userSelected) === JSON.stringify(correctAns);
+
+        // 累積分析紀錄
+        const cat = q.category || "綜合領域";
+        if (!topicAnalytics[cat]) topicAnalytics[cat] = { total: 0, correct: 0 };
+        topicAnalytics[cat].total++;
+
+        if (isCorrect) {
+          correctCount++;
+          topicAnalytics[cat].correct++;
+        } else {
+          lastWrongQuestions.push(q);
+          if (!wrongQuestions.some(item => item.id === q.id)) {
+            wrongQuestions.push(q);
+          }
+        }
+      });
+
+      try {
+        localStorage.setItem("IPAS_TOPIC_STATS", JSON.stringify(topicAnalytics));
+        localStorage.setItem("IPAS_WRONG_QUESTIONS", JSON.stringify(wrongQuestions));
+      } catch(e) {}
+      updateWrongBadge();
+
+      const wrongCount = total - correctCount;
+      const score = Math.round((correctCount / total) * 100);
+      const isPassed = score >= 70;
+
+      // 顯示成績單
+      const card = document.getElementById("scoreReportCard");
+      card.classList.remove("hidden");
+      document.getElementById("resTotal").innerText = total;
+      document.getElementById("resCorrect").innerText = correctCount;
+      document.getElementById("resWrong").innerText = wrongCount;
+      document.getElementById("resScore").innerText = `${score}分`;
+
+      const title = document.getElementById("resultTitle");
+      if (isPassed) {
+        title.className = "text-lg font-bold text-emerald-600";
+        title.innerText = `🎉 恭喜及格！成績：${score} 分（及格標準 70 分）`;
+      } else {
+        title.className = "text-lg font-bold text-rose-600";
+        title.innerText = ` 測驗未達及格標準。成績：${score} 分（及格標準 70 分）`;
+      }
+
+      const btnRetry = document.getElementById("btnRetryWrong");
+      if (wrongCount > 0) btnRetry.classList.remove("hidden");
+      else btnRetry.classList.add("hidden");
+
+      renderExamQuestions();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // 僅重練本次錯題
+    function retryWrongOnly() {
+      if (lastWrongQuestions.length === 0) return;
+      examQuestions = [...lastWrongQuestions];
+      restartExam();
+    }
+
+    // 載入官方 790 題庫隨機抽題
+    async function loadOfficial790() {
+      if (!confirm("確定要載入官方 790 題題庫並抽取 20 題進行測驗嗎？")) return;
+
+      try {
+        const res = await fetch("https://yazelin.github.io/ipas-ai-quiz/questions.json");
+        const data = await res.json();
+        const rawList = data.questions || data;
+
+        const letters = ["A", "B", "C", "D", "E"];
+        const all790 = rawList.map((raw, idx) => {
+          let opts = {};
+          if (Array.isArray(raw.options)) {
+            raw.options.forEach((opt, i) => { opts[letters[i]] = opt; });
+          } else {
+            opts = raw.options || {};
+          }
+          let ans = [];
+          if (typeof raw.answer === "number") ans = [letters[raw.answer]];
+          else if (Array.isArray(raw.answer)) ans = raw.answer.map(a => typeof a === "number" ? letters[a] : a);
+          else if (typeof raw.answer === "string") ans = [raw.answer.trim().toUpperCase()];
+
+          return {
+            id: raw.id || `Q-${idx + 1}`,
+            subject: raw.level || raw.subject || "初級",
+            category: raw.category || raw.topic || "歷屆試題",
+            type: ans.length > 1 ? "multiple" : "single",
+            question: raw.question,
+            options: opts,
+            answer: ans,
+            explanation: raw.explanation || "暫無官方解析。",
+            paper: "經濟部 iPAS 官方能力鑑定公告試題"
+          };
+        });
+
+        examQuestions = all790.sort(() => 0.5 - Math.random()).slice(0, 20);
+        alert(`成功載入！已為您抽出 20 題模擬試題，開始作答！`);
+        restartExam();
+      } catch(err) {
+        alert("載入官方題庫失敗，請確認網路狀態。");
+      }
+    }
+
+    function startMockExam(count) {
+      if (timerInterval) clearInterval(timerInterval);
+      const container = document.getElementById("examTimerContainer");
+      const display = document.getElementById("examTimer");
+      container.classList.remove("hidden");
+      container.classList.add("flex");
+
+      let remain = 75 * 60;
+      timerInterval = setInterval(() => {
+        remain--;
+        const m = String(Math.floor(remain / 60)).padStart(2, '0');
+        const s = String(remain % 60).padStart(2, '0');
+        display.innerText = `${m}:${s}`;
+        if (remain <= 0) {
+          clearInterval(timerInterval);
+          alert("時間到！自動為您交卷。");
+          submitExam();
+        }
+      }, 1000);
+
+      restartExam();
+    }
+
+    // ==================== TAB 2: 錯題盲測重練 ====================
+    function renderRetryQuestions() {
+      const container = document.getElementById("retryQuizContainer");
+      container.innerHTML = "";
+
+      if (wrongQuestions.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-16 bg-white rounded-2xl border border-slate-200">
+            <span class="text-3xl block mb-2">🎉</span>
+            <h3 class="text-sm font-bold text-slate-800">目前沒有累積任何錯題！</h3>
+            <p class="text-xs text-slate-400 mt-1">在考場中做錯的題目會自動匯集到這裡進行盲測重練。</p>
+          </div>
+        `;
+        return;
+      }
+
+      wrongQuestions.forEach((q) => {
+        const card = document.createElement("div");
+        card.className = "bg-white border border-slate-200 rounded-xl p-5 shadow-xs";
+        card.id = `retryCard-${q.id}`;
+
+        const isMulti = q.type === "multiple" || q.answer.length > 1;
+        const inputType = isMulti ? "checkbox" : "radio";
+
+        let optionsHtml = Object.entries(q.options).map(([optKey, optVal]) => `
+          <label class="flex items-start p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition">
+            <input type="${inputType}" name="retry-q-${q.id}" value="${optKey}" class="mt-0.5 text-indigo-600 focus:ring-indigo-500 rounded border-slate-300">
+            <span class="ml-3 text-xs leading-relaxed"><strong class="mr-1">${optKey}.</strong> ${optVal}</span>
+          </label>
+        `).join("");
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+            <span class="bg-rose-50 text-rose-700 font-semibold px-2 py-0.5 rounded">${q.id} · 盲測重答</span>
+            <span class="font-medium text-slate-400">${q.category}</span>
+          </div>
+
+          <p class="text-sm font-medium text-slate-900 mb-4 leading-normal">${q.question}</p>
+          <div class="space-y-2 mb-4">${optionsHtml}</div>
+
+          <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+            <button onclick="submitRetryAnswer('${q.id}')" class="text-xs bg-rose-600 hover:bg-rose-700 text-white font-medium px-4 py-2 rounded-lg transition">
+              重新驗證答案
+            </button>
+            <button onclick="removeWrongQuestion('${q.id}')" class="text-xs text-slate-400 hover:text-slate-600">
+              移出錯題本
+            </button>
+          </div>
+
+          <div id="retryResult-${q.id}" class="hidden mt-4 pt-4 border-t border-slate-100 space-y-3">
+            <div id="retryBadge-${q.id}" class="text-xs font-bold inline-block px-2.5 py-1 rounded"></div>
+            <div class="text-xs bg-slate-50 p-3 rounded-lg border border-slate-200 leading-relaxed text-slate-700">
+              <span class="font-bold block text-slate-900 mb-1">💡 詳解複習：</span>
+              ${q.explanation}
+            </div>
+            <div class="flex justify-end gap-2 pt-1">
+              <button onclick="switchTab('concepts')" class="text-xs text-indigo-600 hover:underline">
+                📖 查看概念庫對應架構
+              </button>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function submitRetryAnswer(qId) {
+      const q = wrongQuestions.find(item => item.id === qId);
+      const inputs = document.querySelectorAll(`input[name="retry-q-${qId}"]:checked`);
+      const selected = Array.from(inputs).map(i => i.value).sort();
+
+      if (selected.length === 0) {
+        alert("請先選擇答案！");
+        return;
+      }
+
+      const resultBox = document.getElementById(`retryResult-${qId}`);
+      const badge = document.getElementById(`retryBadge-${qId}`);
+      resultBox.classList.remove("hidden");
+
+      const isCorrect = JSON.stringify(selected) === JSON.stringify(q.answer.sort());
+
+      if (isCorrect) {
+        badge.className = "text-xs font-bold inline-block px-2.5 py-1 rounded bg-emerald-100 text-emerald-800";
+        badge.innerHTML = `✅ 太棒了，這次答對了！ 正解為：${q.answer.join(", ")} <button onclick="removeWrongQuestion('${q.id}')" class="ml-3 underline text-emerald-900 font-bold">點此標記為已掌握（移出）</button>`;
+      } else {
+        badge.className = "text-xs font-bold inline-block px-2.5 py-1 rounded bg-rose-100 text-rose-800";
+        badge.innerText = `❌ 依然選錯了。 正確答案為：${q.answer.join(", ")}（本次選：${selected.join(", ")}）`;
+      }
+    }
+
+    function removeWrongQuestion(qId) {
+      wrongQuestions = wrongQuestions.filter(item => item.id !== qId);
+      try { localStorage.setItem("IPAS_WRONG_QUESTIONS", JSON.stringify(wrongQuestions)); } catch(e) {}
+      updateWrongBadge();
+      renderRetryQuestions();
+    }
+
+    // ==================== TAB 3: 5 維度核心概念庫 ====================
+    let currentConceptCat = "all";
+
+    function filterConceptCat(cat, btn) {
+      document.querySelectorAll(".c-tag").forEach(b => {
+        b.classList.remove("bg-indigo-600", "text-white");
+        b.classList.add("bg-slate-100", "text-slate-600");
+      });
+      btn.classList.add("bg-indigo-600", "text-white");
+      btn.classList.remove("bg-slate-100", "text-slate-600");
+      currentConceptCat = cat;
+      renderConcepts();
+    }
+
+    function filterConcepts() {
+      renderConcepts();
+    }
+
+    function renderConcepts() {
+      const container = document.getElementById("conceptListContainer");
+      const keyword = (document.getElementById("conceptSearchInput")?.value || "").trim().toLowerCase();
+      container.innerHTML = "";
+
+      let list = conceptDatabase.filter(c => {
+        const matchCat = currentConceptCat === "all" || c.category === currentConceptCat;
+        const matchText = !keyword || c.title.toLowerCase().includes(keyword) || c.analysis.toLowerCase().includes(keyword) || c.glossary.toLowerCase().includes(keyword) || c.paper.toLowerCase().includes(keyword);
+        return matchCat && matchText;
+      });
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs">查無符合關鍵字的核心概念</div>`;
+        return;
+      }
+
+      list.forEach(c => {
+        const card = document.createElement("div");
+        card.className = "bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3.5";
+        card.innerHTML = `
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <div>
+              <span class="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded">${c.category}</span>
+              <h3 class="text-sm font-bold text-slate-900 mt-1">${c.title}</h3>
+            </div>
+            <button onclick="askConceptAI('${c.id}')" class="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2.5 py-1 rounded-lg font-medium transition">
+              🤖 AI 深入提問
+            </button>
+          </div>
+
+          <div class="text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <span class="font-bold text-slate-800 block mb-1">🎯 1. 概念分析與考查目的：</span>
+            <p class="text-slate-600 leading-relaxed">${c.analysis}</p>
+          </div>
+
+          <div class="text-xs bg-slate-900 text-slate-200 p-3.5 rounded-xl font-mono leading-relaxed">
+            <span class="font-bold text-emerald-400 block mb-1 text-[11px]">⚙️ 2. 底層運作架構（Pipeline / Mechanism）：</span>
+            ${c.pipeline}
+          </div>
+
+          <div class="text-xs bg-amber-50/60 p-3 rounded-xl border border-amber-200/60">
+            <span class="font-bold text-amber-900 block mb-1">📖 3. 必考專有名詞解析（Glossary）：</span>
+            <p class="text-amber-800 leading-relaxed">${c.glossary}</p>
+          </div>
+
+          <div class="text-xs bg-indigo-50/40 p-3 rounded-xl border border-indigo-100">
+            <span class="font-bold text-indigo-950 block mb-1">🛠️ 4. 具體調校與工程手法（Techniques）：</span>
+            <p class="text-indigo-900 whitespace-pre-wrap leading-relaxed">${c.techniques}</p>
+          </div>
+
+          <div class="text-xs bg-slate-100/80 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+            <div class="leading-relaxed">
+              <span class="font-bold text-slate-700 block">📜 5. 經典開創論文與法規出處：</span>
+              <span class="text-slate-600">${c.paper}</span>
+            </div>
+            ${c.paper_url ? `<a href="${c.paper_url}" target="_blank" class="text-indigo-600 hover:underline font-bold text-[11px] whitespace-nowrap ml-4">閱讀論文 ↗</a>` : ''}
+          </div>
+
+          <div id="conceptAiBox-${c.id}" class="hidden text-xs bg-indigo-50 p-3 rounded-xl border border-indigo-200 text-indigo-950 whitespace-pre-wrap leading-relaxed"></div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function askConceptAI(cId) {
+      const c = conceptDatabase.find(item => item.id === cId);
+      const box = document.getElementById(`conceptAiBox-${cId}`);
+      box.classList.remove("hidden");
+      box.innerText = "正在聯網向 Gemini AI 取得該概念的深度推導與學術背景...";
+
+      let apiKey = null;
+      try { apiKey = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
+      if (!apiKey) {
+        box.innerText = "請先於右上角設定 Gemini API Key！";
+        openKeySettings();
+        return;
+      }
+
+      const prompt = `你是 iPAS AI 應用規劃師特約教授。請針對考點【${c.title}】提供深度研讀解析：
+1. 該技術在學術界最初由哪篇論文提出？解決了什麼痛點？
+2. 底層的數學概念或架構創新是什麼？
+3. 在 iPAS 考試中最常出現的 2 個單選題情境與陷阱是什麼？
+請引用論文出處，條理分明。`;
+
+      try {
+        const res = await callGemini(prompt, apiKey);
+        box.innerText = res;
+      } catch (e) {
+        box.innerText = "連線失敗，請檢查 API Key。";
+      }
+    }
+
+    // ==================== TAB 4: 記憶翻牌卡 (Flashcards) ====================
+    function initFlashcards() {
+      flashcardList = conceptDatabase.map(c => ({
+        id: c.id,
+        category: c.category,
+        front: `【${c.title}】的核心概念與底層機制為何？`,
+        backAnswer: c.analysis,
+        backMethod: c.pipeline,
+        backPaper: c.paper,
+        mastered: false
+      }));
+
+      document.getElementById("fcTotalCount").innerText = flashcardList.length;
+      updateFlashcardMasteredCount();
+    }
+
+    function renderFlashcard() {
+      if (flashcardList.length === 0) return;
+      const c = flashcardList[currentFcIndex];
+      const inner = document.getElementById("flashcardInner");
+      inner.classList.remove("rotate-y-180");
+
+      document.getElementById("fcCategory").innerText = c.category;
+      document.getElementById("fcIndex").innerText = `${currentFcIndex + 1} / ${flashcardList.length}`;
+      document.getElementById("fcFrontText").innerText = c.front;
+      document.getElementById("fcBackAnswer").innerText = c.backAnswer;
+      document.getElementById("fcBackMethod").innerText = c.backMethod;
+      document.getElementById("fcBackPaper").innerText = c.backPaper;
+    }
+
+    function flipCard() {
+      document.getElementById("flashcardInner").classList.toggle("rotate-y-180");
+    }
+
+    function nextFlashcard() {
+      if (currentFcIndex < flashcardList.length - 1) {
+        currentFcIndex++;
+        renderFlashcard();
+      } else {
+        alert("已經是最後一張卡片了！");
+      }
+    }
+
+    function prevFlashcard() {
+      if (currentFcIndex > 0) {
+        currentFcIndex--;
+        renderFlashcard();
+      }
+    }
+
+    function markCardMastery(isMastered) {
+      if (flashcardList.length === 0) return;
+      flashcardList[currentFcIndex].mastered = isMastered;
+      updateFlashcardMasteredCount();
+      nextFlashcard();
+    }
+
+    function updateFlashcardMasteredCount() {
+      const count = flashcardList.filter(item => item.mastered).length;
+      document.getElementById("fcMasteredCount").innerText = count;
+    }
+
+    function addQuestionToFlashcard(qId) {
+      const q = examQuestions.find(item => item.id === qId);
+      if (!q) return;
+
+      flashcardList.push({
+        id: `fc-${q.id}`,
+        category: q.category,
+        front: q.question,
+        backAnswer: `正確答案：${q.answer.join(", ")}\n\n${q.explanation}`,
+        backMethod: "從錯題本加入之強化記憶卡片",
+        backPaper: q.paper || "iPAS 歷屆考題精華",
+        mastered: false
+      });
+
+      document.getElementById("fcTotalCount").innerText = flashcardList.length;
+      alert(`已將題目轉為記憶翻牌卡！可在【記憶翻牌卡】分頁背誦。`);
+    }
+
+    // ==================== TAB 5: 做題分析邏輯 ====================
+    function updateAnalyticsView() {
+      let tot = 0, cor = 0;
+      Object.values(topicAnalytics).forEach(s => { tot += s.total; cor += s.correct; });
+      const wrg = tot - cor;
+      const acc = tot > 0 ? Math.round((cor / tot) * 100) : 0;
+
+      document.getElementById("anTotal").innerText = tot;
+      document.getElementById("anCorrect").innerText = cor;
+      document.getElementById("anWrong").innerText = wrg;
+      document.getElementById("anAccuracy").innerText = `${acc}%`;
+
+      const container = document.getElementById("categoryBars");
+      const keys = Object.keys(topicAnalytics);
+
+      if (keys.length === 0) {
+        container.innerHTML = `<div class="text-slate-400 text-center py-6">尚未有作答紀錄，請前往考場作答交卷！</div>`;
+        return;
+      }
+
+      container.innerHTML = "";
+      keys.forEach(cat => {
+        const item = topicAnalytics[cat];
+        const pct = Math.round((item.correct / item.total) * 100);
+        let colorClass = "bg-emerald-500";
+        if (pct < 60) colorClass = "bg-rose-500";
+        else if (pct < 75) colorClass = "bg-amber-500";
+
+        const div = document.createElement("div");
+        div.className = "space-y-1";
+        div.innerHTML = `
+          <div class="flex justify-between items-center text-[11px]">
+            <span class="font-medium text-slate-700">${cat}</span>
+            <span class="text-slate-500">${pct}% (${item.correct}/${item.total})</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+            <div class="${colorClass} h-2 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function generateAIWeaknessReport() {
+      let apiKey = null;
+      try { apiKey = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
+      if (!apiKey) {
+        alert("請先設定 Gemini API Key！");
+        openKeySettings();
+        return;
+      }
+
+      const reportBox = document.getElementById("aiWeaknessContent");
+      const btn = document.getElementById("btnGenAIReport");
+      btn.innerText = "⏳ 聯網診斷分析中...";
+      reportBox.innerText = "AI 正在交叉比對你的錯題與考科大綱，請稍候...";
+
+      const statsSummary = JSON.stringify(topicAnalytics, null, 2);
+      const wrongList = wrongQuestions.slice(0, 8).map(q => `[${q.category}] ${q.question}`).join("\n");
+
+      const prompt = `你是 iPAS AI 應用規劃師的資深總教練。以下為學員的作答分佈與錯題紀錄：
+主題掌握度：
+${statsSummary}
+
+代表性錯題：
+${wrongList || '無'}
+
+請為他量身打造「考前 7 天衝刺處方籤」：
+1. 找出致命弱點領域（說明最容易失分的單元及可能混淆的原因）
+2. 提煉 2 個必須熟記的經典架構或公式
+3. 推薦該單元對應之學術論文或標準規範（包含年份與作者）
+語氣嚴謹清晰，條理分明。`;
+
+      try {
+        const res = await callGemini(prompt, apiKey);
+        reportBox.innerText = res;
+        btn.innerText = "✅ 診斷完成";
+      } catch (err) {
+        reportBox.innerText = "生成失敗，請檢查 API Key 或網路狀態。";
+        btn.innerText = "重新生成";
+      }
+    }
+
+    function resetAllStats() {
+      if (confirm("確定要重置所有做題紀錄與錯題本嗎？")) {
+        topicAnalytics = {};
+        wrongQuestions = [];
+        try {
+          localStorage.removeItem("IPAS_TOPIC_STATS");
+          localStorage.removeItem("IPAS_WRONG_QUESTIONS");
+        } catch(e) {}
+        initApp();
+        updateAnalyticsView();
+      }
+    }
+
+    // ==================== AI 助教與 Gemini 整合 ====================
+    async function askQuestionAI(qId) {
+      let apiKey = null;
+      try { apiKey = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
+      if (!apiKey) {
+        openKeySettings();
+        return;
+      }
+
+      const q = examQuestions.find(item => item.id === qId);
+      const box = document.getElementById(`aiReply-${qId}`);
+      box.classList.remove("hidden");
+      box.innerText = "正在聯網向 Gemini AI 檢索開創論文與深入解析...";
+
+      const prompt = `你是 iPAS AI 應用規劃師考試助教。請用白話好懂的方式解說此題：
+題目：${q.question}
+選項：${JSON.stringify(q.options)}
+正確答案：${q.answer.join(", ")}
+請包含：
+1. 核心觀念生活化比喻
+2. 開創性學術論文出處（作者、年份）
+3. 考前直覺判斷口訣`;
+
+      try {
+        const res = await callGemini(prompt, apiKey);
+        box.innerText = res;
+      } catch (e) {
+        box.innerText = "連線失敗，請檢查 API Key 或網路狀態。";
+      }
+    }
+
+    async function callGemini(promptText, apiKey) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [{ parts: [{ text: promptText }] }],
+        tools: [{ googleSearch: {} }]
+      };
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.candidates && data.candidates[0].content.parts[0].text) {
+        let answer = data.candidates[0].content.parts[0].text;
+        if (data.candidates[0].groundingMetadata && data.candidates[0].groundingMetadata.groundingChunks) {
+          const sources = data.candidates[0].groundingMetadata.groundingChunks
+            .filter(c => c.web && c.web.uri)
+            .map(c => `[${c.web.title || c.web.uri}](${c.web.uri})`);
+          if (sources.length > 0) {
+            answer += `\n\n🌐 即時聯網查證來源：\n` + sources.slice(0, 3).join("\n");
+          }
+        }
+        return answer;
+      } else {
+        throw new Error("無法取得回答");
+      }
+    }
+
+    function toggleChatDrawer() {
+      let apiKey = null;
+      try { apiKey = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
+      if (!apiKey) {
+        openKeySettings();
+        return;
+      }
+      document.getElementById("chatDrawer").classList.toggle("hidden");
+    }
+
+    async function sendChat() {
+      const input = document.getElementById("chatInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      let apiKey = null;
+      try { apiKey = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
+      if (!apiKey) {
+        openKeySettings();
+        return;
+      }
+
+      appendMessage(text, "user");
+      input.value = "";
+      const loadingId = appendMessage(" 正在聯網檢索學術文獻並思考中...", "ai");
+
+      try {
+        const reply = await callGemini(text, apiKey);
+        document.getElementById(loadingId).innerText = reply;
+      } catch (err) {
+        document.getElementById(loadingId).innerText = "抱歉，連線失敗或金鑰無效。";
+      }
+    }
+
+    function appendMessage(text, sender) {
+      const id = "msg-" + Math.random().toString(36).substr(2, 6);
+      const isUser = sender === "user";
+      const div = document.createElement("div");
+      div.className = isUser ? "flex justify-end" : "flex justify-start";
+      div.innerHTML = `
+        <div id="${id}" class="max-w-[85%] p-2.5 rounded-xl whitespace-pre-wrap leading-relaxed ${isUser ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-xs'}">
+          ${text}
+        </div>
+      `;
+      const box = document.getElementById("chatMessages");
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+      return id;
+    }
+
+    function openKeySettings() { document.getElementById("keyModal").classList.remove("hidden"); }
+    function closeKeySettings() { document.getElementById("keyModal").classList.add("hidden"); }
+    function saveKeySettings() {
+      const val = document.getElementById("geminiApiKeyInput").value.trim();
+      if (val) {
+        try { localStorage.setItem("GEMINI_API_KEY", val); } catch(e) {}
+        updateKeyStatus();
+      }
+      closeKeySettings();
+    }
+
+    function updateKeyStatus() {
+      let key = null;
+      try { key = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
+      const txt = document.getElementById("keyStatusText");
+      if (key && txt) {
+        txt.innerText = "已啟用";
+      }
+    }
+
+    // 啟動身分安全檢查
+    checkAuthStatus();
+  </script>
 </body>
 </html>
