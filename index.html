@@ -196,17 +196,12 @@
             </div>
           </div>
           <div class="flex flex-wrap gap-1.5 text-xs pt-1 border-t border-slate-100" id="conceptCategoryBar">
-            <button class="c-tag active bg-indigo-600 text-white px-2.5 py-1 rounded-lg font-medium" onclick="filterConceptCat('all', this)">全部領域 (350+)</button>
-            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('機器學習', this)">1. 機器學習基礎</button>
-            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('深度學習', this)">2. 深度學習架構</button>
-            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('Transformer', this)">3. Transformer與LLM</button>
-            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('提示工程', this)">4. 提示工程與互動</button>
-            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('RAG', this)">5. RAG與向量系統</button>
-            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('微調', this)">6. 模型微調與PEFT</button>
-            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('評估', this)">7. 模型評估與指標</button>
-            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('壓縮', this)">8. 模型壓縮與推論</button>
-            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('MLOps', this)">9. MLOps與Agent</button>
-            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('治理', this)">10. AI治理與法規</button>
+            <button class="c-tag active bg-indigo-600 text-white px-2.5 py-1 rounded-lg font-medium" onclick="filterConceptCat('all', this)">全部領域</button>
+            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('機器學習基礎', this)">機器學習基礎</button>
+            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('深度學習架構', this)">深度學習架構</button>
+            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('提示工程與生成式AI', this)">提示工程與生成式AI</button>
+            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('RAG與向量系統', this)">RAG與向量系統</button>
+            <button class="c-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium hover:bg-slate-200" onclick="filterConceptCat('AI倫理法規', this)">AI倫理法規</button>
           </div>
         </div>
 
@@ -504,7 +499,7 @@
     }
 
     // ==================== 核心題庫（預設 10 道標準全真考題） ====================
-    const initialExamQuestions = [
+    let initialExamQuestions = [
       {
         id: "1",
         subject: "初級科目一",
@@ -608,7 +603,7 @@
     ];
 
     // ==================== 5 維度核心概念庫資料庫 ====================
-    const conceptDatabase = [
+    let conceptDatabase = [
       {
         id: "rag_architecture",
         title: "檢索增強生成 (RAG)",
@@ -681,12 +676,20 @@
       topicAnalytics = JSON.parse(localStorage.getItem("IPAS_TOPIC_STATS") || "{}");
     } catch(e) {}
 
-    function initApp() {
+    async function initApp() {
       updateWrongBadge();
-      updateSummary();
       updateKeyStatus();
-      initFlashcards();
+      
+      // 關鍵修復：啟動時非同步讀取外部檔案！
+      await Promise.all([
+        loadExternalConcepts(),
+        loadExternalQuestions()
+      ]);
+
+      initFullFlashcards();
       restartExam();
+      updateSummary();
+      renderConcepts();
     }
 
     function updateSummary() {
@@ -1073,6 +1076,9 @@
       renderConcepts();
     }
 
+    
+    let conceptDisplayLimit = 15;
+
     function renderConcepts() {
       const container = document.getElementById("conceptListContainer");
       const keyword = (document.getElementById("conceptSearchInput")?.value || "").trim().toLowerCase();
@@ -1080,7 +1086,7 @@
 
       let list = conceptDatabase.filter(c => {
         const matchCat = currentConceptCat === "all" || c.category.includes(currentConceptCat) || currentConceptCat.includes(c.category);
-        const matchText = !keyword || c.title.toLowerCase().includes(keyword) || c.analysis.toLowerCase().includes(keyword) || c.glossary.toLowerCase().includes(keyword) || c.paper.toLowerCase().includes(keyword);
+        const matchText = !keyword || c.title.toLowerCase().includes(keyword) || c.analysis.toLowerCase().includes(keyword) || (c.glossary && c.glossary.toLowerCase().includes(keyword)) || (c.paper && c.paper.toLowerCase().includes(keyword));
         return matchCat && matchText;
       });
 
@@ -1089,9 +1095,12 @@
         return;
       }
 
-      list.forEach(c => {
+      // 分頁截斷：只顯示目前上限
+      const visibleList = list.slice(0, conceptDisplayLimit);
+
+      visibleList.forEach(c => {
         const card = document.createElement("div");
-        card.className = "bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3.5";
+        card.className = "bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3.5 transition hover:border-indigo-200";
         card.innerHTML = `
           <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
             <div>
@@ -1115,18 +1124,18 @@
 
           <div class="text-xs bg-amber-50/60 p-3 rounded-xl border border-amber-200/60">
             <span class="font-bold text-amber-900 block mb-1">📖 3. 必考專有名詞解析（Glossary）：</span>
-            <p class="text-amber-800 leading-relaxed">${c.glossary}</p>
+            <p class="text-amber-800 leading-relaxed">${c.glossary || '掌握核心專業術語與邊界'}</p>
           </div>
 
           <div class="text-xs bg-indigo-50/40 p-3 rounded-xl border border-indigo-100">
             <span class="font-bold text-indigo-950 block mb-1">🛠️ 4. 具體調校與工程手法（Techniques）：</span>
-            <p class="text-indigo-900 whitespace-pre-wrap leading-relaxed">${c.techniques}</p>
+            <p class="text-indigo-900 whitespace-pre-wrap leading-relaxed">${c.techniques || '掌握實戰調優策略'}</p>
           </div>
 
           <div class="text-xs bg-slate-100/80 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
             <div class="leading-relaxed">
               <span class="font-bold text-slate-700 block">📜 5. 經典開創論文與法規出處：</span>
-              <span class="text-slate-600">${c.paper}</span>
+              <span class="text-slate-600">${c.paper || '官方規範指引'}</span>
             </div>
             ${c.paper_url ? `<a href="${c.paper_url}" target="_blank" class="text-indigo-600 hover:underline font-bold text-[11px] whitespace-nowrap ml-4">閱讀論文 ↗</a>` : ''}
           </div>
@@ -1135,7 +1144,37 @@
         `;
         container.appendChild(card);
       });
+
+      // 載入更多按鈕
+      if (list.length > conceptDisplayLimit) {
+        const moreDiv = document.createElement("div");
+        moreDiv.className = "text-center py-4";
+        moreDiv.innerHTML = `
+          <button onclick="showMoreConcepts()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-xs transition">
+            👇 載入更多考點（已顯示 ${conceptDisplayLimit} / ${list.length} 篇）
+          </button>
+        `;
+        container.appendChild(moreDiv);
+      }
     }
+
+    function showMoreConcepts() {
+      conceptDisplayLimit += 25;
+      renderConcepts();
+    }
+
+    function filterConceptCat(cat, btn) {
+      document.querySelectorAll(".c-tag").forEach(b => {
+        b.classList.remove("bg-indigo-600", "text-white");
+        b.classList.add("bg-slate-100", "text-slate-600");
+      });
+      btn.classList.add("bg-indigo-600", "text-white");
+      btn.classList.remove("bg-slate-100", "text-slate-600");
+      currentConceptCat = cat;
+      conceptDisplayLimit = 15; // 重設分頁
+      renderConcepts();
+    }
+
 
     async function askConceptAI(cId) {
       const c = conceptDatabase.find(item => item.id === cId);
@@ -1477,3 +1516,4 @@ ${wrongList || '無'}
   </script>
 </body>
 </html>
+
