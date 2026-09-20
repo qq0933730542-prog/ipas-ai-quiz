@@ -499,7 +499,7 @@
     }
 
     // ==================== 核心題庫（預設 10 道標準全真考題） ====================
-    let initialExamQuestions = [
+    const initialExamQuestions = [
       {
         id: "1",
         subject: "初級科目一",
@@ -603,7 +603,7 @@
     ];
 
     // ==================== 5 維度核心概念庫資料庫 ====================
-    let conceptDatabase = [
+    const conceptDatabase = [
       {
         id: "rag_architecture",
         title: "檢索增強生成 (RAG)",
@@ -676,20 +676,12 @@
       topicAnalytics = JSON.parse(localStorage.getItem("IPAS_TOPIC_STATS") || "{}");
     } catch(e) {}
 
-    async function initApp() {
+    function initApp() {
       updateWrongBadge();
-      updateKeyStatus();
-      
-      // 關鍵修復：啟動時非同步讀取外部檔案！
-      await Promise.all([
-        loadExternalConcepts(),
-        loadExternalQuestions()
-      ]);
-
-      initFullFlashcards();
-      restartExam();
       updateSummary();
-      renderConcepts();
+      updateKeyStatus();
+      initFlashcards();
+      restartExam();
     }
 
     function updateSummary() {
@@ -1077,7 +1069,29 @@
     }
 
     
-    let conceptDisplayLimit = 15;
+    const localPaperMap = {
+      'transformer': './01_Transformer_Attention_Is_All_You_Need.md',
+      'rag': './02_RAG_Retrieval_Augmented_Generation.md',
+      'lora': './03_LoRA_Low_Rank_Adaptation.md',
+      'cot': './04_Chain_of_Thought_Prompting.md',
+      'resnet': './05_ResNet_Deep_Residual_Learning.md',
+      'dropout': './06_Dropout_Prevent_Overfitting.md',
+      'bert': './07_BERT_Bidirectional_Transformers.md',
+      'governance': './08_AI_Governance_NIST_RMF.md'
+    };
+
+    function getLocalPaperLink(c) {
+      const lowerTitle = (c.title + ' ' + c.id).toLowerCase();
+      if (lowerTitle.includes('transformer') && !lowerTitle.includes('vit')) return './01_Transformer_Attention_Is_All_You_Need.md';
+      if (lowerTitle.includes('rag')) return './02_RAG_Retrieval_Augmented_Generation.md';
+      if (lowerTitle.includes('lora')) return './03_LoRA_Low_Rank_Adaptation.md';
+      if (lowerTitle.includes('思維鏈') || lowerTitle.includes('cot') || lowerTitle.includes('chain-of-thought')) return './04_Chain_of_Thought_Prompting.md';
+      if (lowerTitle.includes('resnet') || lowerTitle.includes('殘差')) return './05_ResNet_Deep_Residual_Learning.md';
+      if (lowerTitle.includes('dropout')) return './06_Dropout_Prevent_Overfitting.md';
+      if (lowerTitle.includes('bert') && !lowerTitle.includes('bertscore')) return './07_BERT_Bidirectional_Transformers.md';
+      if (lowerTitle.includes('governance') || lowerTitle.includes('治理') || lowerTitle.includes('nist')) return './08_AI_Governance_NIST_RMF.md';
+      return null;
+    }
 
     function renderConcepts() {
       const container = document.getElementById("conceptListContainer");
@@ -1085,8 +1099,8 @@
       container.innerHTML = "";
 
       let list = conceptDatabase.filter(c => {
-        const matchCat = currentConceptCat === "all" || c.category.includes(currentConceptCat) || currentConceptCat.includes(c.category);
-        const matchText = !keyword || c.title.toLowerCase().includes(keyword) || c.analysis.toLowerCase().includes(keyword) || (c.glossary && c.glossary.toLowerCase().includes(keyword)) || (c.paper && c.paper.toLowerCase().includes(keyword));
+        const matchCat = currentConceptCat === "all" || c.category === currentConceptCat;
+        const matchText = !keyword || c.title.toLowerCase().includes(keyword) || c.analysis.toLowerCase().includes(keyword) || c.glossary.toLowerCase().includes(keyword) || c.paper.toLowerCase().includes(keyword);
         return matchCat && matchText;
       });
 
@@ -1095,12 +1109,9 @@
         return;
       }
 
-      // 分頁截斷：只顯示目前上限
-      const visibleList = list.slice(0, conceptDisplayLimit);
-
-      visibleList.forEach(c => {
+      list.forEach(c => {
         const card = document.createElement("div");
-        card.className = "bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3.5 transition hover:border-indigo-200";
+        card.className = "bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3.5";
         card.innerHTML = `
           <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
             <div>
@@ -1124,57 +1135,30 @@
 
           <div class="text-xs bg-amber-50/60 p-3 rounded-xl border border-amber-200/60">
             <span class="font-bold text-amber-900 block mb-1">📖 3. 必考專有名詞解析（Glossary）：</span>
-            <p class="text-amber-800 leading-relaxed">${c.glossary || '掌握核心專業術語與邊界'}</p>
+            <p class="text-amber-800 leading-relaxed">${c.glossary}</p>
           </div>
 
           <div class="text-xs bg-indigo-50/40 p-3 rounded-xl border border-indigo-100">
             <span class="font-bold text-indigo-950 block mb-1">🛠️ 4. 具體調校與工程手法（Techniques）：</span>
-            <p class="text-indigo-900 whitespace-pre-wrap leading-relaxed">${c.techniques || '掌握實戰調優策略'}</p>
+            <p class="text-indigo-900 whitespace-pre-wrap leading-relaxed">${c.techniques}</p>
           </div>
 
           <div class="text-xs bg-slate-100/80 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
             <div class="leading-relaxed">
               <span class="font-bold text-slate-700 block">📜 5. 經典開創論文與法規出處：</span>
-              <span class="text-slate-600">${c.paper || '官方規範指引'}</span>
+              <span class="text-slate-600">${c.paper}</span>
             </div>
-            ${c.paper_url ? `<a href="${c.paper_url}" target="_blank" class="text-indigo-600 hover:underline font-bold text-[11px] whitespace-nowrap ml-4">閱讀論文 ↗</a>` : ''}
+            <div class="flex items-center gap-2">
+              ${getLocalPaperLink(c) ? `<a href="${getLocalPaperLink(c)}" target="_blank" class="text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded font-bold text-[10px] whitespace-nowrap">📖 本地精讀筆記</a>` : ''}
+              ${c.paper_url ? `<a href="${c.paper_url}" target="_blank" class="text-indigo-600 hover:underline font-bold text-[11px] whitespace-nowrap">原文 ↗</a>` : ''}
+            </div>
           </div>
 
           <div id="conceptAiBox-${c.id}" class="hidden text-xs bg-indigo-50 p-3 rounded-xl border border-indigo-200 text-indigo-950 whitespace-pre-wrap leading-relaxed"></div>
         `;
         container.appendChild(card);
       });
-
-      // 載入更多按鈕
-      if (list.length > conceptDisplayLimit) {
-        const moreDiv = document.createElement("div");
-        moreDiv.className = "text-center py-4";
-        moreDiv.innerHTML = `
-          <button onclick="showMoreConcepts()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-xs transition">
-            👇 載入更多考點（已顯示 ${conceptDisplayLimit} / ${list.length} 篇）
-          </button>
-        `;
-        container.appendChild(moreDiv);
-      }
     }
-
-    function showMoreConcepts() {
-      conceptDisplayLimit += 25;
-      renderConcepts();
-    }
-
-    function filterConceptCat(cat, btn) {
-      document.querySelectorAll(".c-tag").forEach(b => {
-        b.classList.remove("bg-indigo-600", "text-white");
-        b.classList.add("bg-slate-100", "text-slate-600");
-      });
-      btn.classList.add("bg-indigo-600", "text-white");
-      btn.classList.remove("bg-slate-100", "text-slate-600");
-      currentConceptCat = cat;
-      conceptDisplayLimit = 15; // 重設分頁
-      renderConcepts();
-    }
-
 
     async function askConceptAI(cId) {
       const c = conceptDatabase.find(item => item.id === cId);
@@ -1516,4 +1500,3 @@ ${wrongList || '無'}
   </script>
 </body>
 </html>
-
