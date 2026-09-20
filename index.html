@@ -5,15 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>iPAS AI 應用規劃師 - 專屬刷題庫</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-24">
 
   <!-- ==================== 1. 密碼與驗證碼鎖定層 ==================== -->
   <div id="authGate" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
-      <div class="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 mx-auto mb-4">
-        <i data-lucide="lock" class="w-6 h-6"></i>
+      <div class="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 mx-auto mb-4 text-xl">
+        🔒
       </div>
       <h2 class="text-base font-bold text-center text-slate-900 mb-1">私人備考題庫驗證</h2>
       <p class="text-xs text-center text-slate-500 mb-5">請輸入通行密碼與驗證碼以解鎖內容</p>
@@ -21,26 +20,26 @@
       <!-- 密碼輸入 -->
       <div class="mb-3">
         <label class="block text-[11px] font-semibold text-slate-700 mb-1">通行密碼</label>
-        <input type="password" id="inputPassword" placeholder="請輸入密碼..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <input type="password" id="inputPassword" placeholder="預設密碼 ipas2026" onkeydown="if(event.key==='Enter') handleUnlock()" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
       </div>
 
       <!-- 動態驗證碼輸入與展示 -->
       <div class="mb-4">
         <label class="block text-[11px] font-semibold text-slate-700 mb-1">安全驗證碼</label>
         <div class="flex items-center gap-2">
-          <input type="text" id="inputCaptcha" placeholder="輸入右側 4 碼" maxlength="4" class="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          <div id="captchaDisplay" onclick="refreshCaptcha()" title="點擊重新產生驗證碼" class="cursor-pointer select-none bg-slate-100 border border-slate-300 rounded-lg px-3 py-1.5 font-mono text-sm font-bold tracking-widest text-indigo-700 line-through decoration-slate-400">
-            0000
+          <input type="text" id="inputCaptcha" placeholder="輸入右側 4 碼" maxlength="4" onkeydown="if(event.key==='Enter') handleUnlock()" class="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <div id="captchaDisplay" onclick="refreshCaptcha()" title="點擊重新產生驗證碼" class="cursor-pointer select-none bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 font-mono text-sm font-bold tracking-widest text-indigo-700 line-through decoration-slate-400">
+            ----
           </div>
-          <button type="button" onclick="refreshCaptcha()" class="text-slate-400 hover:text-slate-600 p-1">
-            <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+          <button type="button" onclick="refreshCaptcha()" class="text-slate-500 hover:text-slate-800 p-1 text-sm font-bold">
+            🔄
           </button>
         </div>
       </div>
 
-      <div id="authErrorMsg" class="hidden text-[11px] text-rose-600 font-medium mb-3"></div>
+      <div id="authErrorMsg" class="hidden text-[11px] text-rose-600 font-medium mb-3 p-2 bg-rose-50 rounded-lg border border-rose-200"></div>
 
-      <button id="btnUnlock" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2.5 rounded-lg transition shadow-sm">
+      <button id="btnUnlock" onclick="handleUnlock()" class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-semibold py-2.5 rounded-lg transition shadow-sm cursor-pointer">
         解鎖進入題庫
       </button>
     </div>
@@ -52,19 +51,18 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
       <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
         <div class="flex items-center space-x-2">
-          <i data-lucide="brain" class="text-indigo-600 w-6 h-6"></i>
+          <span class="text-xl">🧠</span>
           <div>
             <h1 class="text-base font-bold text-slate-900 leading-tight">iPAS AI 題庫</h1>
             <span id="quizCountSummary" class="text-[11px] text-slate-500">載入中...</span>
           </div>
         </div>
         <div class="flex items-center space-x-2">
-          <button id="openKeyModal" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1 border border-slate-300">
-            <i data-lucide="key" class="w-3.5 h-3.5"></i>
-            <span id="keyStatusText">AI Key</span>
+          <button id="openKeyModal" onclick="openKeySettings()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1 border border-slate-300">
+            🔑 <span id="keyStatusText">AI Key</span>
           </button>
-          <button id="btnLockApp" class="text-xs bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 px-3 py-1.5 rounded-lg flex items-center gap-1 border border-slate-300 transition" title="重新鎖定畫面">
-            <i data-lucide="lock" class="w-3.5 h-3.5"></i> 鎖定
+          <button onclick="lockApp()" class="text-xs bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 px-3 py-1.5 rounded-lg border border-slate-300 transition">
+            🔒 鎖定
           </button>
         </div>
       </div>
@@ -74,22 +72,21 @@
     <div class="bg-indigo-900 text-white py-3 shadow-inner">
       <div class="max-w-4xl mx-auto px-4 flex flex-wrap items-center justify-between gap-2 text-xs">
         <div class="flex flex-wrap items-center gap-2">
-          <button id="btnLoadOfficial" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3 py-1.5 rounded-lg flex items-center gap-1 transition">
-            <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i> 載入官方 790 題
+          <button onclick="loadOfficialQuestions()" id="btnLoadOfficial" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3 py-1.5 rounded-lg transition">
+            📥 載入官方 790 題
           </button>
-          <button id="btnRandom20" class="bg-indigo-700 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition">
-            <i data-lucide="shuffle" class="w-3.5 h-3.5"></i> 隨機 20 題
+          <button onclick="pickRandomQuestions(20)" class="bg-indigo-700 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg transition">
+            🔀 隨機 20 題
           </button>
-          <button id="btnMockExam" class="bg-indigo-700 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition">
-            <i data-lucide="timer" class="w-3.5 h-3.5"></i> 75分鐘模擬考 (50題)
+          <button onclick="startMockExam()" class="bg-indigo-700 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg transition">
+            ⏱️ 75分鐘模擬考 (50題)
           </button>
-          <button id="btnWrongNotebook" class="bg-rose-800/80 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition">
-            <i data-lucide="book-x" class="w-3.5 h-3.5"></i> 錯題本 (<span id="wrongCount">0</span>)
+          <button onclick="showWrongNotebook()" class="bg-rose-800/80 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg transition">
+            📕 錯題本 (<span id="wrongCount">0</span>)
           </button>
         </div>
         <div id="examTimerContainer" class="hidden items-center bg-indigo-950 px-3 py-1 rounded-lg text-amber-300 font-mono font-bold">
-          <i data-lucide="clock" class="w-3.5 h-3.5 mr-1 text-amber-400"></i>
-          剩餘時間：<span id="examTimer">75:00</span>
+          ⏰ 剩餘時間：<span id="examTimer">75:00</span>
         </div>
       </div>
     </div>
@@ -97,11 +94,11 @@
     <!-- 主內容容器 -->
     <main class="max-w-4xl mx-auto px-4 mt-6">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div class="flex flex-wrap gap-1.5 text-xs" id="filterBar">
-          <button class="filter-btn active bg-indigo-600 text-white px-3 py-1 rounded-full font-medium" data-filter="all">全部顯示</button>
-          <button class="filter-btn bg-white text-slate-600 border border-slate-200 px-3 py-1 rounded-full font-medium hover:bg-slate-100" data-filter="初級">初級考科</button>
-          <button class="filter-btn bg-white text-slate-600 border border-slate-200 px-3 py-1 rounded-full font-medium hover:bg-slate-100" data-filter="中級">中級考科</button>
-          <button class="filter-btn bg-white text-slate-600 border border-slate-200 px-3 py-1 rounded-full font-medium hover:bg-slate-100" data-filter="multiple">多選題</button>
+        <div class="flex flex-wrap gap-1.5 text-xs">
+          <button class="filter-btn active bg-indigo-600 text-white px-3 py-1 rounded-full font-medium" onclick="applyFilter('all', this)">全部顯示</button>
+          <button class="filter-btn bg-white text-slate-600 border border-slate-200 px-3 py-1 rounded-full font-medium hover:bg-slate-100" onclick="applyFilter('初級', this)">初級考科</button>
+          <button class="filter-btn bg-white text-slate-600 border border-slate-200 px-3 py-1 rounded-full font-medium hover:bg-slate-100" onclick="applyFilter('中級', this)">中級考科</button>
+          <button class="filter-btn bg-white text-slate-600 border border-slate-200 px-3 py-1 rounded-full font-medium hover:bg-slate-100" onclick="applyFilter('multiple', this)">多選題</button>
         </div>
 
         <div class="text-xs text-slate-500 font-medium">
@@ -114,41 +111,31 @@
 
     <!-- 右下角懸浮按鈕：開啟「AI 即時聯網助教」 -->
     <div class="fixed bottom-6 right-6 z-40">
-      <button id="toggleChatBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white p-3.5 rounded-full shadow-lg flex items-center gap-2 transition hover:scale-105">
-        <i data-lucide="sparkles" class="w-5 h-5"></i>
-        <span class="text-xs font-semibold pr-1">AI 即時問答</span>
+      <button onclick="toggleChatDrawer()" class="bg-indigo-600 hover:bg-indigo-700 text-white p-3.5 rounded-full shadow-lg flex items-center gap-2 transition hover:scale-105">
+        ✨ <span class="text-xs font-semibold pr-1">AI 即時問答</span>
       </button>
     </div>
 
     <!-- AI 即時對話抽屜 -->
     <div id="chatDrawer" class="fixed bottom-20 right-6 w-96 max-w-[calc(100vw-3rem)] h-[520px] bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 flex flex-col hidden overflow-hidden">
       <div class="bg-indigo-600 text-white px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i data-lucide="bot" class="w-5 h-5"></i>
-          <div>
-            <h4 class="text-xs font-bold leading-tight">AI 聯網即時助教</h4>
-            <span class="text-[10px] text-indigo-200 flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span> 支援 Google 即時聯網搜尋
-            </span>
-          </div>
+        <div>
+          <h4 class="text-xs font-bold leading-tight flex items-center gap-1">🤖 AI 聯網即時助教</h4>
+          <span class="text-[10px] text-indigo-200">🟢 支援 Google 即時聯網檢索</span>
         </div>
-        <button id="closeChatBtn" class="text-indigo-200 hover:text-white">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
+        <button onclick="toggleChatDrawer()" class="text-indigo-200 hover:text-white font-bold text-sm">✕</button>
       </div>
 
       <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs bg-slate-50">
         <div class="bg-white border border-slate-200 p-3 rounded-xl shadow-xs text-slate-700">
-           你好！我是你的 iPAS AI 備考即時助教。你可以隨時問我任何觀念或請我整理考點。
+          你好！我是你的 iPAS AI 備考即時助教。你可以隨時問我任何 AI 概念、公式辨析或歷屆考點。
         </div>
       </div>
 
       <div class="p-3 bg-white border-t border-slate-200">
         <div class="flex items-center gap-2">
-          <input type="text" id="chatInput" placeholder="輸入問題（如：RAG 與 Fine-tuning 差別）..." class="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          <button id="sendChatBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-lg">
-            <i data-lucide="send" class="w-4 h-4"></i>
-          </button>
+          <input type="text" id="chatInput" placeholder="輸入問題（如：RAG 與 微調 差別）..." onkeydown="if(event.key==='Enter') sendChat()" class="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <button onclick="sendChat()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-xs font-bold">送出</button>
         </div>
       </div>
     </div>
@@ -157,25 +144,35 @@
   <!-- API Key 設定彈窗 -->
   <div id="keyModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200">
-      <h3 class="text-base font-bold text-slate-900 mb-2 flex items-center gap-2">
-        <i data-lucide="bot" class="w-5 h-5 text-indigo-600"></i> 設定 Gemini API Key
-      </h3>
+      <h3 class="text-base font-bold text-slate-900 mb-2">🔑 設定 Gemini API Key</h3>
       <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-        可至 <a href="https://aistudio.google.com/" target="_blank" class="text-indigo-600 underline">Google AI Studio</a> 免費取得 API Key。金鑰僅儲存在你自己的本地瀏覽器。
+        可至 <a href="https://aistudio.google.com/" target="_blank" class="text-indigo-600 underline font-semibold">Google AI Studio</a> 免費取得 API Key。金鑰僅儲存在本地瀏覽器。
       </p>
       <input type="password" id="geminiApiKeyInput" placeholder="貼上 API Key..." class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4" />
       <div class="flex justify-end space-x-2">
-        <button id="closeKeyModal" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
-        <button id="saveKeyBtn" class="px-4 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">儲存</button>
+        <button onclick="closeKeySettings()" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+        <button onclick="saveKeySettings()" class="px-4 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">儲存</button>
       </div>
     </div>
   </div>
 
+  <!-- ==================== 3. 核心邏輯腳本 ==================== -->
   <script>
-    // ==================== 安全通行設定 ====================
-    // 你可以在這裡自訂你的密碼：
+    // 通行密碼設定
     const CORRECT_PASSWORD = "ipas2026";
     let currentCaptcha = "";
+    let isMemoryAuthed = false;
+
+    // 跨瀏覽器安全 Storage 讀寫
+    function safeStorageGet(key) {
+      try { return sessionStorage.getItem(key); } catch (e) { return null; }
+    }
+    function safeStorageSet(key, val) {
+      try { sessionStorage.setItem(key, val); } catch (e) {}
+    }
+    function safeStorageRemove(key) {
+      try { sessionStorage.removeItem(key); } catch (e) {}
+    }
 
     function generateCaptcha() {
       const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -188,8 +185,467 @@
 
     function refreshCaptcha() {
       currentCaptcha = generateCaptcha();
-      document.getElementById("captchaDisplay").innerText = currentCaptcha;
+      const el = document.getElementById("captchaDisplay");
+      if (el) el.innerText = currentCaptcha;
     }
 
-    function checkAuth() {
-      const isAuthed = sessionStorage.getItem("IPAS_APP_
+    function checkAuthStatus() {
+      const isAuthed = safeStorageGet("IPAS_APP_AUTH") === "true" || isMemoryAuthed;
+      const gate = document.getElementById("authGate");
+      const app = document.getElementById("mainApp");
+
+      if (isAuthed) {
+        gate.classList.add("hidden");
+        app.classList.remove("hidden");
+        initApp();
+      } else {
+        gate.classList.remove("hidden");
+        app.classList.add("hidden");
+        refreshCaptcha();
+      }
+    }
+
+    // 解鎖點擊事件
+    function handleUnlock() {
+      const pwdInput = document.getElementById("inputPassword");
+      const captchaInput = document.getElementById("inputCaptcha");
+      const err = document.getElementById("authErrorMsg");
+
+      const pwd = pwdInput ? pwdInput.value.trim() : "";
+      const captcha = captchaInput ? captchaInput.value.trim().toUpperCase() : "";
+
+      if (pwd !== CORRECT_PASSWORD) {
+        err.innerText = "通行密碼錯誤，請重新輸入！";
+        err.classList.remove("hidden");
+        refreshCaptcha();
+        if (captchaInput) captchaInput.value = "";
+        return;
+      }
+
+      if (captcha !== currentCaptcha) {
+        err.innerText = "驗證碼錯誤，請輸入右側顯示的 4 碼！";
+        err.classList.remove("hidden");
+        refreshCaptcha();
+        if (captchaInput) captchaInput.value = "";
+        return;
+      }
+
+      // 驗證成功
+      err.classList.add("hidden");
+      safeStorageSet("IPAS_APP_AUTH", "true");
+      isMemoryAuthed = true;
+      checkAuthStatus();
+    }
+
+    function lockApp() {
+      safeStorageRemove("IPAS_APP_AUTH");
+      isMemoryAuthed = false;
+      checkAuthStatus();
+    }
+
+    // ==================== 題庫與主要功能 ====================
+    const defaultQuestions = [
+      {
+        id: "L11-001",
+        subject: "初級",
+        category: "機器學習基礎概念",
+        question: "在機器學習任務中，若希望根據房子的坪數、屋齡與地段來預測其成交價格（連續數值），應採用下列何種模型？",
+        options: { "A": "分群（Clustering）", "B": "迴歸（Regression）", "C": "關聯規則（Association Rule）", "D": "主成分分析（PCA）" },
+        answer: ["B"],
+        explanation: "預測連續數值目標屬於監督式學習中的『迴歸』任務；分類任務預測離散類別，分群與降維則多為非監督式學習。",
+        concept_card: { title: "迴歸 vs 分類", points: ["迴歸：目標為連續數值（如價格、溫度）。", "分類：目標為離散標籤（如合格/不合格）。"] }
+      },
+      {
+        id: "L12-001",
+        subject: "初級",
+        category: "檢索增強生成 (RAG)",
+        question: "企業在導入大型語言模型（LLM）建置內部知識庫時，為了降低『幻覺（Hallucination）』並補充最新專有資料，最常優先採取的架構為何？",
+        options: { "A": "從頭重新預訓練基底模型", "B": "檢索增強生成（Retrieval-Augmented Generation, RAG）", "C": "大幅調高模型的 Temperature 參數", "D": "改用非監督式分群" },
+        answer: ["B"],
+        explanation: "RAG 透過向量檢索先從企業內部資料庫找出相關內容，再將其作為 Context 注入 Prompt 交給 LLM 回答，成本低且能大幅緩解幻覺。",
+        concept_card: { title: "RAG 核心要素", points: ["Chunking（切塊）與 Embeddings（向量化）", "向量資料庫相似度比對（Top-K 檢索）", "提示詞上下文拼接（Augmented Prompt）"] }
+      }
+    ];
+
+    let allQuestions = [...defaultQuestions];
+    let displayQuestions = [...defaultQuestions];
+    let wrongQuestions = [];
+    try {
+      wrongQuestions = JSON.parse(localStorage.getItem("IPAS_WRONG_QUESTIONS") || "[]");
+    } catch(e) {}
+
+    let currentFilter = "all";
+    let answeredStats = { correct: 0, total: 0 };
+    let timerInterval = null;
+
+    function initApp() {
+      renderQuestions();
+      updateWrongBadge();
+      updateSummary();
+      updateKeyStatus();
+    }
+
+    function updateSummary() {
+      const el = document.getElementById("quizCountSummary");
+      if (el) el.innerText = `題庫收錄 ${allQuestions.length} 題（顯示中: ${displayQuestions.length} 題）`;
+    }
+
+    function normalizeRawQuestion(raw, idx) {
+      let opts = {};
+      if (Array.isArray(raw.options)) {
+        const letters = ["A", "B", "C", "D", "E", "F"];
+        raw.options.forEach((opt, i) => { opts[letters[i]] = opt; });
+      } else {
+        opts = raw.options || {};
+      }
+
+      let ans = [];
+      if (typeof raw.answer === "number") {
+        ans = [["A", "B", "C", "D", "E"][raw.answer]];
+      } else if (Array.isArray(raw.answer)) {
+        ans = raw.answer.map(a => typeof a === "number" ? ["A", "B", "C", "D"][a] : a);
+      } else if (typeof raw.answer === "string") {
+        ans = [raw.answer.trim().toUpperCase()];
+      }
+
+      return {
+        id: raw.id || `Q-${idx + 1}`,
+        subject: raw.level || raw.subject || (raw.id && raw.id.includes("L12") ? "初級" : "初級"),
+        category: raw.category || raw.topic || "歷屆公告試題",
+        type: ans.length > 1 ? "multiple" : "single",
+        question: raw.question,
+        options: opts,
+        answer: ans,
+        explanation: raw.explanation || "暫無官方解析說明。",
+        concept_card: raw.concept_card || { title: raw.topic || "考點速記", points: ["請掌握核心定義與名詞辨析。"] }
+      };
+    }
+
+    async function loadOfficialQuestions() {
+      const btn = document.getElementById("btnLoadOfficial");
+      btn.innerText = "⏳ 下載 790 題中...";
+
+      try {
+        const res = await fetch("https://yazelin.github.io/ipas-ai-quiz/questions.json");
+        const data = await res.json();
+        const rawList = data.questions || data;
+
+        allQuestions = rawList.map((q, idx) => normalizeRawQuestion(q, idx));
+        displayQuestions = [...allQuestions];
+
+        btn.innerText = "✅ 已載入 790 題";
+        btn.classList.replace("bg-emerald-600", "bg-emerald-700");
+        updateSummary();
+        renderQuestions();
+      } catch (err) {
+        alert("載入失敗，請確認網路連線。");
+        btn.innerText = "📥 重新載入";
+      }
+    }
+
+    function pickRandomQuestions(count) {
+      displayQuestions = [...allQuestions].sort(() => 0.5 - Math.random()).slice(0, count);
+      renderQuestions();
+      updateSummary();
+    }
+
+    function startMockExam() {
+      displayQuestions = [...allQuestions].sort(() => 0.5 - Math.random()).slice(0, 50);
+      renderQuestions();
+      updateSummary();
+
+      const container = document.getElementById("examTimerContainer");
+      const display = document.getElementById("examTimer");
+      container.classList.remove("hidden");
+      container.classList.add("flex");
+
+      if (timerInterval) clearInterval(timerInterval);
+      let remain = 75 * 60;
+
+      timerInterval = setInterval(() => {
+        remain--;
+        const m = String(Math.floor(remain / 60)).padStart(2, '0');
+        const s = String(remain % 60).padStart(2, '0');
+        display.innerText = `${m}:${s}`;
+        if (remain <= 0) {
+          clearInterval(timerInterval);
+          alert("考試時間結束！");
+        }
+      }, 1000);
+    }
+
+    function showWrongNotebook() {
+      if (wrongQuestions.length === 0) {
+        alert("目前還沒有錯題紀錄！");
+        return;
+      }
+      displayQuestions = [...wrongQuestions];
+      renderQuestions();
+      updateSummary();
+    }
+
+    function updateWrongBadge() {
+      const el = document.getElementById("wrongCount");
+      if (el) el.innerText = wrongQuestions.length;
+    }
+
+    function applyFilter(filter, btn) {
+      document.querySelectorAll(".filter-btn").forEach(b => {
+        b.classList.remove("bg-indigo-600", "text-white");
+        b.classList.add("bg-white", "text-slate-600");
+      });
+      btn.classList.add("bg-indigo-600", "text-white");
+      btn.classList.remove("bg-white", "text-slate-600");
+      currentFilter = filter;
+      renderQuestions();
+    }
+
+    function renderQuestions() {
+      const container = document.getElementById("quizContainer");
+      container.innerHTML = "";
+
+      let filtered = displayQuestions.filter(q => {
+        if (currentFilter === "all") return true;
+        if (currentFilter === "multiple") return q.type === "multiple";
+        return q.subject && q.subject.includes(currentFilter);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-400 text-sm">無符合條件的題目</div>`;
+        return;
+      }
+
+      filtered.forEach((q) => {
+        const card = document.createElement("div");
+        card.className = "bg-white border border-slate-200 rounded-xl p-5 shadow-sm";
+        card.id = `card-${q.id}`;
+
+        const isMulti = q.type === "multiple";
+        const inputType = isMulti ? "checkbox" : "radio";
+
+        let optionsHtml = Object.entries(q.options).map(([optKey, optVal]) => `
+          <label class="flex items-start p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition">
+            <input type="${inputType}" name="q-${q.id}" value="${optKey}" class="mt-0.5 text-indigo-600 focus:ring-indigo-500 rounded border-slate-300">
+            <span class="ml-3 text-xs leading-relaxed"><strong class="mr-1">${optKey}.</strong> ${optVal}</span>
+          </label>
+        `).join("");
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+            <span class="bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded">${q.id} · ${q.subject}</span>
+            <span class="font-medium text-slate-400">${isMulti ? "【多選題】" : "【單選題】"} · ${q.category}</span>
+          </div>
+
+          <p class="text-sm font-medium text-slate-900 mb-4 leading-normal">${q.question}</p>
+          <div class="space-y-2 mb-4">${optionsHtml}</div>
+
+          <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+            <button onclick="submitAnswer('${q.id}')" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg transition">
+              確認答案
+            </button>
+            <button onclick="askAI('${q.id}')" class="text-xs text-slate-600 hover:text-indigo-600 flex items-center gap-1 font-medium">
+              ✨ 問 AI 助教
+            </button>
+          </div>
+
+          <div id="result-${q.id}" class="hidden mt-4 pt-4 border-t border-slate-100 space-y-3">
+            <div id="badge-${q.id}" class="text-xs font-bold inline-block px-2.5 py-1 rounded"></div>
+            
+            <div class="text-xs bg-slate-50 p-3 rounded-lg border border-slate-200">
+              <p class="font-bold text-slate-800 mb-1">💡 題目詳解：</p>
+              <p class="text-slate-600 leading-relaxed">${q.explanation}</p>
+            </div>
+
+            <div class="text-xs bg-amber-50/60 p-3 rounded-lg border border-amber-200/60">
+              <p class="font-bold text-amber-900 mb-1">📌 核心觀念重點卡：${q.concept_card?.title || '重點'}</p>
+              <ul class="list-disc pl-4 text-amber-800 space-y-0.5">
+                ${(q.concept_card?.points || []).map(pt => `<li>${pt}</li>`).join("")}
+              </ul>
+            </div>
+
+            <div id="aiBox-${q.id}" class="hidden text-xs bg-indigo-50/50 p-3 rounded-lg border border-indigo-100 text-indigo-950">
+              <div class="font-bold mb-1 text-indigo-700">🤖 AI 助教白話解析</div>
+              <div id="aiContent-${q.id}" class="leading-relaxed whitespace-pre-wrap">正在思考中...</div>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function submitAnswer(qId) {
+      const q = allQuestions.find(item => item.id === qId) || displayQuestions.find(item => item.id === qId);
+      const inputs = document.querySelectorAll(`input[name="q-${qId}"]:checked`);
+      const selected = Array.from(inputs).map(i => i.value).sort();
+
+      if (selected.length === 0) {
+        alert("請先勾選答案！");
+        return;
+      }
+
+      const resultBox = document.getElementById(`result-${qId}`);
+      const badge = document.getElementById(`badge-${qId}`);
+      resultBox.classList.remove("hidden");
+
+      const isCorrect = JSON.stringify(selected) === JSON.stringify(q.answer.sort());
+
+      answeredStats.total++;
+      if (isCorrect) {
+        answeredStats.correct++;
+        badge.className = "text-xs font-bold inline-block px-2.5 py-1 rounded bg-emerald-100 text-emerald-800";
+        badge.innerText = `✅ 作答正確！ 正確答案：${q.answer.join(", ")}`;
+      } else {
+        badge.className = "text-xs font-bold inline-block px-2.5 py-1 rounded bg-rose-100 text-rose-800";
+        badge.innerText = `❌ 回答錯誤。 正解為：${q.answer.join(", ")}（你選：${selected.join(", ")}）`;
+
+        if (!wrongQuestions.some(item => item.id === q.id)) {
+          wrongQuestions.push(q);
+          try { localStorage.setItem("IPAS_WRONG_QUESTIONS", JSON.stringify(wrongQuestions)); } catch(e) {}
+          updateWrongBadge();
+        }
+      }
+
+      document.getElementById("statCorrect").innerText = answeredStats.correct;
+      document.getElementById("statTotal").innerText = answeredStats.total;
+    }
+
+    async function askAI(qId) {
+      let apiKey = null;
+      try { apiKey = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
+      if (!apiKey) {
+        openKeySettings();
+        return;
+      }
+
+      const q = allQuestions.find(item => item.id === qId) || displayQuestions.find(item => item.id === qId);
+      const aiBox = document.getElementById(`aiBox-${qId}`);
+      const aiContent = document.getElementById(`aiContent-${qId}`);
+      const resultBox = document.getElementById(`result-${qId}`);
+
+      resultBox.classList.remove("hidden");
+      aiBox.classList.remove("hidden");
+      aiContent.innerText = "正在聯網向 Gemini AI 請教這道題目...";
+
+      const prompt = `你是 iPAS AI 應用規劃師考試助教。請用生活化易記的方式解析此題：
+題目：${q.question}
+選項：${JSON.stringify(q.options)}
+答案：${q.answer.join(", ")}
+請包含：生活化譬喻、陷阱剖析、一句話口訣。`;
+
+      try {
+        const res = await callGemini(prompt, apiKey);
+        aiContent.innerText = res;
+      } catch (e) {
+        aiContent.innerText = "連線失敗，請檢查 API Key 或網路狀態。";
+      }
+    }
+
+    async function callGemini(promptText, apiKey) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [{ parts: [{ text: promptText }] }],
+        tools: [{ googleSearch: {} }]
+      };
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.candidates && data.candidates[0].content.parts[0].text) {
+        let answer = data.candidates[0].content.parts[0].text;
+        if (data.candidates[0].groundingMetadata && data.candidates[0].groundingMetadata.groundingChunks) {
+          const sources = data.candidates[0].groundingMetadata.groundingChunks
+            .filter(c => c.web && c.web.uri)
+            .map(c => `[${c.web.title || c.web.uri}](${c.web.uri})`);
+          if (sources.length > 0) {
+            answer += `\n\n🌐 即時聯網來源：\n` + sources.slice(0, 3).join("\n");
+          }
+        }
+        return answer;
+      } else {
+        throw new Error("無法取得回答");
+      }
+    }
+
+    // 對話抽屜邏輯
+    function toggleChatDrawer() {
+      let apiKey = null;
+      try { apiKey = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
+      if (!apiKey) {
+        openKeySettings();
+        return;
+      }
+      document.getElementById("chatDrawer").classList.toggle("hidden");
+    }
+
+    async function sendChat() {
+      const input = document.getElementById("chatInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      let apiKey = null;
+      try { apiKey = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
+      if (!apiKey) {
+        openKeySettings();
+        return;
+      }
+
+      appendMessage(text, "user");
+      input.value = "";
+      const loadingId = appendMessage(" 正在聯網檢索並思考中...", "ai");
+
+      try {
+        const reply = await callGemini(text, apiKey);
+        document.getElementById(loadingId).innerText = reply;
+      } catch (err) {
+        document.getElementById(loadingId).innerText = "抱歉，連線失敗或金鑰無效。";
+      }
+    }
+
+    function appendMessage(text, sender) {
+      const id = "msg-" + Math.random().toString(36).substr(2, 6);
+      const isUser = sender === "user";
+      const div = document.createElement("div");
+      div.className = isUser ? "flex justify-end" : "flex justify-start";
+      div.innerHTML = `
+        <div id="${id}" class="max-w-[85%] p-2.5 rounded-xl whitespace-pre-wrap leading-relaxed ${isUser ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-xs'}">
+          ${text}
+        </div>
+      `;
+      const box = document.getElementById("chatMessages");
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+      return id;
+    }
+
+    // API Key 設定彈窗
+    function openKeySettings() { document.getElementById("keyModal").classList.remove("hidden"); }
+    function closeKeySettings() { document.getElementById("keyModal").classList.add("hidden"); }
+    function saveKeySettings() {
+      const val = document.getElementById("geminiApiKeyInput").value.trim();
+      if (val) {
+        try { localStorage.setItem("GEMINI_API_KEY", val); } catch(e) {}
+        updateKeyStatus();
+      }
+      closeKeySettings();
+    }
+
+    function updateKeyStatus() {
+      let key = null;
+      try { key = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
+      const txt = document.getElementById("keyStatusText");
+      if (key && txt) {
+        txt.innerText = "已啟用";
+        document.getElementById("openKeyModal").classList.add("bg-emerald-50", "text-emerald-700", "border-emerald-300");
+      }
+    }
+
+    // 啟動驗證
+    checkAuthStatus();
+  </script>
+</body>
+</html>
