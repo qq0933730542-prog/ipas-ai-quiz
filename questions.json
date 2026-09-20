@@ -4,9 +4,14 @@
     "subject": "初級科目一",
     "category": "機器學習基礎",
     "question": "在機器學習任務中，若希望根據房屋的坪數、屋齡與地段來預測其成交價格（連續數值），應採用下列何種模型？",
-    "options": { "A": "分群（Clustering）", "B": "迴歸（Regression）", "C": "關聯規則（Association Rule）", "D": "主成分分析（PCA）" },
+    "options": {
+      "A": "分群（Clustering）",
+      "B": "迴歸（Regression）",
+      "C": "關聯規則（Association Rule）",
+      "D": "主成分分析（PCA）"
+    },
     "answer": ["B"],
-    "explanation": "預測連續數值目標屬於監督式學習中的『迴歸』任務；分類任務預測離散類別，分群與降維則多為非監督式學習。",
+    "explanation": "【核心正解】：預測目標為「連續型數值」（如房價、溫度、營收）時，屬於監督式學習中的『迴歸（Regression）』問題。\n\n【易錯陷阱剖析】：\n• 選項 A（分群）：常見盲區！分群是非監督式學習，目標是將未標註的資料分堆（如客戶分群），無法用來預測具體房價數值。\n• 選項 C（關聯規則）：常用於購物籃分析（如買啤酒常同時買尿布），無法處理連續數值回歸。\n• 選項 D（PCA）：主要功能為降維（Dimensionality Reduction）與特徵萃取，並非終端預測模型。\n\n【核心觀念連結】：看到「連續數值標籤」➔ 直覺選【迴歸】；看到「離散標籤/類別」➔ 直覺選【分類】；看到「無標籤資料分堆」➔ 直覺選【分群】。",
     "paper": "Hastie et al. - 《The Elements of Statistical Learning》"
   },
   {
@@ -14,9 +19,14 @@
     "subject": "初級科目一",
     "category": "模型評估指標",
     "question": "在醫療診斷或罕見疾病篩檢情境中，最希望避免『有病卻被誤判為沒病（漏診）』的情況，此時最應優先追求哪一項評估指標的極大化？",
-    "options": { "A": "精確率（Precision）", "B": "召回率（Recall / Sensitivity）", "C": "特異度（Specificity）", "D": "準確率（Accuracy）" },
+    "options": {
+      "A": "精確率（Precision）",
+      "B": "召回率（Recall / Sensitivity）",
+      "C": "特異度（Specificity）",
+      "D": "準確率（Accuracy）"
+    },
     "answer": ["B"],
-    "explanation": "漏診代表偽陰性（False Negative, FN）。Recall = TP / (TP + FN)，當 FN 越小，Recall 越高。因此避免漏診時應優先提升 Recall。",
+    "explanation": "【核心正解】：漏診代表將真實正例判斷為陰性，即偽陰性（False Negative, FN）。召回率（Recall）公式為 TP / (TP + FN)，分母是「所有真正有病的人」。當 FN 越低（漏診越少），Recall 就會越高。\n\n【易錯陷阱剖析】：\n• 選項 A（Precision）：精確率公式為 TP / (TP + FP)，防範的是「沒病被誤判為有病（偽陽性/誤報）」，例如垃圾郵件過濾（絕不能把重要合約誤丟垃圾桶）才優先看 Precision。\n• 選項 D（Accuracy）：在正負樣本極度不均衡的罕見疾病篩檢中（如患病率僅 0.1%），即使模型全部猜沒病，Accuracy 也有 99.9%，但召回率為 0，具有嚴重誤導性！\n\n【核心觀念連結】：\n• 寧可錯抓一百，不可漏放一人（醫療、瑕疵檢測、資安入侵）➔ 優先看【Recall 召回率】。\n• 寧可漏抓，絕不能冤枉好人（垃圾郵件、推薦系統、核發貸款）➔ 優先看【Precision 精確率】。",
     "paper": "Davis & Goadrich, ICML 2006 - 《The Relationship Between Precision-Recall and ROC Curves》"
   },
   {
@@ -24,9 +34,14 @@
     "subject": "初級科目一",
     "category": "過擬合與正規化",
     "question": "當神經網路在訓練集上表現極佳，但在測試集上泛化能力很差時，下列哪項手法『無法』有效減緩過擬合？",
-    "options": { "A": "加入 Dropout 機制", "B": "加入 L2 正則化（Weight Decay）", "C": "大幅增加網路隱藏層的神經元數量與深度", "D": "增加訓練資料多樣性（Data Augmentation）" },
+    "options": {
+      "A": "加入 Dropout 機制",
+      "B": "加入 L2 正則化（Weight Decay）",
+      "C": "大幅增加網路隱藏層的神經元數量與深度",
+      "D": "增加訓練資料多樣性（Data Augmentation）"
+    },
     "answer": ["C"],
-    "explanation": "大幅增加神經元數量與深度會提高模型容量（Capacity），反而會加劇過擬合。其餘三項皆為抑制過擬合的標準手段。",
+    "explanation": "【核心正解】：題目問的是『無法』減緩過擬合。大幅增加神經元數量與深度會提高模型的參數容量（Capacity），讓神經網路更容易「死背」訓練集雜訊，反而會進一步加劇過擬合。\n\n【易錯陷阱剖析】：\n• 選項 A（Dropout）：訓練時以機率 p 隨機暫停神經元傳遞，打破共適應性（Co-adaptation），為深度學習抑制過擬合的經典手法。\n• 選項 B（L2 正則化）：在 Loss 函數中加入權重平方和懲罰項，促使權重趨向較小且平滑的數值，有效防止權重過大。\n• 選項 D（資料擴增）：透過旋轉、裁切、平移增加資料多樣性，等於給予模型更廣泛的訓練分佈，能強效抗過擬合。\n\n【核心觀念連結】：抗過擬合三大處方：① 簡化架構/提早停止（Early Stopping） ② 懲罰複雜度（L1/L2、Dropout） ③ 增加資料量（Data Augmentation）。",
     "paper": "Srivastava et al., JMLR 2014 - 《Dropout: A Simple Way to Prevent Overfitting》"
   },
   {
@@ -34,9 +49,14 @@
     "subject": "初級科目二",
     "category": "RAG架構",
     "question": "企業在導入大型語言模型（LLM）建置知識庫時，為了降低『幻覺（Hallucination）』並補充內部最新私有資料，最常採取的低成本架構為何？",
-    "options": { "A": "從頭重新預訓練基底大模型", "B": "檢索增強生成（Retrieval-Augmented Generation, RAG）", "C": "大幅調高模型的 Temperature 參數", "D": "使用全參數量微調（Full Fine-Tuning）" },
+    "options": {
+      "A": "從頭重新預訓練基底大模型",
+      "B": "檢索增強生成（Retrieval-Augmented Generation, RAG）",
+      "C": "大幅調高模型的 Temperature 參數",
+      "D": "使用全參數量微調（Full Fine-Tuning）"
+    },
     "answer": ["B"],
-    "explanation": "RAG 透過向量比對先從內部庫取得文件片段作為 Context 注入 Prompt，由 LLM 整理回答，成本低且能大幅緩解幻覺。",
+    "explanation": "【核心正解】：RAG（檢索增強生成）透過外掛企業私有文件向量庫，當使用者提問時先進行相似度檢索（Retrieval），再將檢索到的段落與原始問題注入 Prompt 讓 LLM 生成回答，既能即時更新內部最新知識，又能將幻覺率降至最低，成本極低。\n\n【易錯陷阱剖析】：\n• 選項 A（重新預訓練）：成本動輒數百萬至數千萬美元且耗時數月，完全不符合題幹的「低成本」要求。\n• 選項 C（調高 Temperature）：會大幅增加輸出多樣性與隨機性，反而會大幅加劇模型的幻覺現象！\n• 選項 D（全參數微調）：微調（Fine-tuning）雖然能改變模型的語氣風格或特定領域格式，但無法有效注入大量高頻更新的事實性資料，且運算成本高昂。\n\n【核心觀念連結】：企業 LLM 落地黃金判斷法：\n• 想改「知識庫事實、查內部規章、避免幻覺」➔ 優先選【RAG】。\n• 想改「專業口吻、結構化輸出格式、特有任務行為」➔ 選【微調 Fine-Tuning】。\n• RAG + 微調是最高階但成本也較高的複合方案。",
     "paper": "Lewis et al., NeurIPS 2020 - 《Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks》"
   },
   {
@@ -44,9 +64,14 @@
     "subject": "初級科目二",
     "category": "提示工程",
     "question": "在 Prompt Engineering 中，要求模型在給出答案前先輸出中間推導步驟（如：『請一步一步思考』），此手法稱為？",
-    "options": { "A": "Zero-shot Prompting", "B": "思維鏈（Chain-of-Thought, CoT）", "C": "Prompt 注入攻擊", "D": "量化壓縮（Quantization）" },
+    "options": {
+      "A": "Zero-shot Prompting",
+      "B": "思維鏈（Chain-of-Thought, CoT）",
+      "C": "Prompt 注入攻擊",
+      "D": "量化壓縮（Quantization）"
+    },
     "answer": ["B"],
-    "explanation": "思維鏈（CoT）引導模型展開中間步驟推理，能顯著提升複雜邏輯與算術題目的正確率。",
+    "explanation": "【核心正解】：思維鏈（Chain-of-Thought, CoT）核心理念是透過引導模型產生中間推理路徑（Reasoning Steps），讓自回歸解碼過程先預測推導步驟，從而大幅提升多步驟數學計算與邏輯推論的準確度。\n\n【易錯陷阱剖析】：\n• 選項 A（Zero-shot）：直接給指令不給任何推理範例或步驟引導，在面對多步驟邏輯題時極易出錯。\n• 選項 C（Prompt Injection）：屬於資安攻擊手法（惡意輸入覆蓋原本系統提示詞），非提示優化工程。\n• 選項 D（量化 Quantization）：屬於模型壓縮技術（如 FP16 轉 INT4/INT8），與提示詞工程無關。\n\n【核心觀念連結】：\n• Zero-shot CoT 神奇口訣：在提示詞尾端加入『Let\\'s think step by step』（讓我們一步一步思考），不需範例即可觸發模型深層推理。",
     "paper": "Wei et al., NeurIPS 2022 - 《Chain-of-Thought Prompting Elicits Reasoning in Large Language Models》"
   },
   {
@@ -54,9 +79,14 @@
     "subject": "初級科目二",
     "category": "模型參數調校",
     "question": "在呼叫生成式 AI API 時，若希望模型生成的回答具備更高的創造力與多樣性，通常應如何調整 Temperature 參數？",
-    "options": { "A": "調低接近 0（如 0.1）", "B": "調高（如 0.8 ~ 1.0）", "C": "將 Temperature 設為負數", "D": "Temperature 與創造力無關" },
+    "options": {
+      "A": "調低接近 0（如 0.1）",
+      "B": "調高（如 0.8 ~ 1.0）",
+      "C": "將 Temperature 設為負數",
+      "D": "Temperature 與創造力無關"
+    },
     "answer": ["B"],
-    "explanation": "Temperature 決定輸出機率分佈平滑度。越接近 0 越偏向 Greedy 確定性輸出；調高會使低機率 Token 更有機會被選中，增加創造力與隨機性。",
+    "explanation": "【核心正解】：Temperature 控制 Softmax 機率分佈的平坦度。當調高 Temperature（如 0.8 ~ 1.0），機率分佈會變得更平緩，使得次高機率的候選詞有更高機會被選中，產生更具創意、驚喜與多樣性的文本。\n\n【易錯陷阱剖析】：\n• 選項 A（調低接近 0）：機率分佈會變得極度陡峭，模型幾乎只選機率最高的單詞（Greedy Search），回答會變得極度保守、嚴謹且確定性高（適合寫程式、法規問答、數學解題）。\n• 選項 C（負數）：溫度在數學公式中位於分母（z_i / T），不可小於或等於 0，傳入負數會直接拋出 API 參數錯誤。\n\n【核心觀念連結】：\n• 數理邏輯、程式碼生成、事實檢索 ➔ Temperature 設低（0.0 ~ 0.2）。\n• 文案發想、小說創作、腦力激盪 ➔ Temperature 設高（0.7 ~ 1.0）。",
     "paper": "Ackley et al., 1985 - 《A Learning Algorithm for Boltzmann Machines》"
   },
   {
@@ -64,9 +94,14 @@
     "subject": "初級科目一",
     "category": "特徵工程與資料前處理",
     "question": "在特徵縮放（Feature Scaling）中，將數值特徵線性變換縮放至 區間的方法稱為？",
-    "options": { "A": "Z-score 標準化（Standardization）", "B": "最小最大值正規化（Min-Max Normalization）", "C": "主成分分析（PCA）", "D": "One-Hot 編碼" },
+    "options": {
+      "A": "Z-score 標準化（Standardization）",
+      "B": "最小最大值正規化（Min-Max Normalization）",
+      "C": "主成分分析（PCA）",
+      "D": "One-Hot 編碼"
+    },
     "answer": ["B"],
-    "explanation": "Min-Max Normalization 公式為 (X - Xmin) / (Xmax - Xmin)，將資料線性對齊至；Z-score 是將平均數轉為 0、標準差轉為 1。",
+    "explanation": "【核心正解】：最小最大值正規化（Min-Max Normalization / Scaling）公式為 X_scaled = (X - X_min) / (X_max - X_min)，能保證所有數值嚴格映射於 的封閉區間。\n\n【易錯陷阱剖析】：\n• 選項 A（Z-score 標準化）：極常搞混！公式為 (X - μ) / σ，轉換後的資料平均數為 0、標準差為 1，但數值範圍為負無窮至正無窮（沒有邊界），絕非限定在 內。\n• 選項 C（PCA）：主成分分析，屬於線性無監督降維手法，非數值特徵縮放工具。\n• 選項 D（One-Hot 編碼）：用於處理類別型（Categorical）標籤（如台北、台中、高雄轉為），非數值型尺度變換。\n\n【核心觀念連結】：\n• 資料無極端離群值、演算法需要嚴格 邊界（如影像像素 0~255、神經網路輸入）➔ 用【Min-Max】。\n• 資料存在極端離群值、符合常態分佈假設（如 SVM、Logistic Regression）➔ 用【Z-score 標準化】。",
     "paper": "Scikit-Learn Preprocessing Documentation"
   },
   {
@@ -74,9 +109,14 @@
     "subject": "初級科目二",
     "category": "AI倫理與法規",
     "question": "依據台灣國科會《人工智慧基本法（草案）》與數位發展部公部門 AI 應用指引，下列哪項敘述為正確的核心原則？",
-    "options": { "A": "公務機關可直接將高度機密公文上傳至未授權之公有雲 AI 模型分析", "B": "AI 系統產出之內容應具備透明性與可解釋性，並由人類負最終決策責任", "C": "生成式 AI 生成之內容具有絕對法律權利，可直接列為專利發明人", "D": "導入 AI 應完全取代人類審查，不得保留人工覆核環節" },
+    "options": {
+      "A": "公務機關可直接將高度機密公文上傳至未授權之公有雲 AI 模型分析",
+      "B": "AI 系統產出之內容應具備透明性與可解釋性，並由人類負最終決策責任",
+      "C": "生成式 AI 生成之內容具有絕對法律權利，可直接列為專利發明人",
+      "D": "導入 AI 應完全取代人類審查，不得保留人工覆核環節"
+    },
     "answer": ["B"],
-    "explanation": "AI 倫理與各國指引一致強調 Human-in-the-loop（人機協作/人為最終問責），AI 不具備法律主體專利人地位，機密公文亦嚴禁上傳未授權公有雲。",
+    "explanation": "【核心正解】：國內外 AI 法規（包括台灣《人工智慧基本法草案》、歐盟《AI Act》及 NIST AI RMF）一致要求落實『人類監督（Human-in-the-loop）』與問責制，AI 僅能作為輔助工具，系統應具備可解釋性與透明度，最終決定與法律責任必須由人類承擔。\n\n【易錯陷阱剖析】：\n• 選項 A：政府明確規範機密或未公開公文嚴禁未經資安審查直接上傳外部商業生成式 AI，違反資安法規。\n• 選項 C：各國專利局（智慧財產局）目前皆判定發明人必須具備「自然人（Natural Person）」資格，AI 系統不得列為專利發明人或著作權人。\n• 選項 D：高風險或攸關公眾權益之場景，嚴禁全自動化無人監督判定，必須保留人為覆核機制。\n\n【核心觀念連結】：AI 治理四大基石：人本監督（Human Oversight）、透明可解釋（Explainability）、隱私與資安保護（Privacy & Security）、問責無免責（Accountability）。",
     "paper": "台灣國科會《人工智慧基本法（草案）》& NIST AI RMF 1.0"
   },
   {
@@ -84,9 +124,14 @@
     "subject": "初級科目一",
     "category": "深度學習基礎",
     "question": "在卷積神經網路（CNN）中，『池化層（Pooling Layer，如 Max Pooling）』的主要功能為何？",
-    "options": { "A": "計算損失函數的梯度", "B": "降低特徵維度、減少參數量並保留主要特徵", "C": "將連續數值轉換為文字標籤", "D": "取代 Softmax 進行最後分類" },
+    "options": {
+      "A": "計算損失函數的梯度",
+      "B": "降低特徵維度、減少參數量並保留主要特徵",
+      "C": "將連續數值轉換為文字標籤",
+      "D": "取代 Softmax 進行最後分類"
+    },
     "answer": ["B"],
-    "explanation": "池化層用於降低特徵圖（Feature Map）空間維度，減少計算量與防止過擬合，同時具備一定的平移不變性。",
+    "explanation": "【核心正解】：池化層（Pooling Layer，如最大池化 Max Pooling 或平均池化 Average Pooling）的關鍵目的在於空間降採樣（Downsampling）。它透過縮小特徵圖（Feature Map）的寬高維度，大幅降低後續網路的計算量與參數數量，同時增強模型對微小位移與形變的平移不變性（Translation Invariance）。\n\n【易錯陷阱剖析】：\n• 選項 A（計算梯度）：梯度是由反向傳播演算法（Backpropagation）利用微積分鏈鎖律計算，與池化層結構無關。\n• 選項 C（轉為文字標籤）：這是 NLP 任務或 Tokenizer 解碼器的工作。\n• 選項 D（取代 Softmax）：CNN 最後分類仍然依賴全連接層（Dense Layer）搭配 Softmax 函數計算機率，池化層本身不輸出分類機率。\n\n【核心觀念連結】：CNN 經典三件套角色分配：\n• 【卷積層 Conv】：萃取局部空間特徵（邊緣、紋理、形狀）。\n• 【池化層 Pool】：壓縮維度、防過擬合、保留最顯著特徵（通常無可訓練權重）。\n• 【全連接層 FC】：扁平化特徵後進行綜合判斷並輸出分類。",
     "paper": "LeCun et al., 1998 - 《Gradient-Based Learning Applied to Document Recognition》"
   },
   {
@@ -94,9 +139,14 @@
     "subject": "初級科目二",
     "category": "模型微調技術",
     "question": "在大型語言模型的高效微調技術中，LoRA（Low-Rank Adaptation）的核心原理為何？",
-    "options": { "A": "凍結預訓練權重，透過引入低秩矩陣分解來訓練額外參數", "B": "將模型參數量修剪掉 90% 來提升推論速度", "C": "直接在提示詞前端拼接人工撰寫的樣板", "D": "將模型權重全數轉為 1-bit 二值化" },
+    "options": {
+      "A": "凍結預訓練權重，透過引入低秩矩陣分解來訓練額外參數",
+      "B": "將模型參數量修剪掉 90% 來提升推論速度",
+      "C": "直接在提示詞前端拼接人工撰寫的樣板",
+      "D": "將模型權重全數轉為 1-bit 二值化"
+    },
     "answer": ["A"],
-    "explanation": "LoRA 凍結原有大模型權重 W，透過旁路學習兩個低秩分解矩陣 A 與 B（ΔW = B × A），大幅降低微調所需的 GPU 顯存與可訓練參數量。",
+    "explanation": "【核心正解】：LoRA（低秩適應）的核心突破在於『凍結（Freeze）原有大模型的全部預訓練權重 W』，只在旁路引入兩個可訓練的小矩陣 A 和 B（其中 rank r 遠小於原始維度 d，ΔW = B × A）。在微調期間，可訓練參數量直接縮減 10,000 倍，GPU 顯存需求降低 3 倍以上，且推論時可直接將 B×A 矩陣權重融合回 W，達成零推論延遲！\n\n【易錯陷阱剖析】：\n• 選項 B（修剪 90%）：這是模型剪枝（Pruning）技術，並非 LoRA。\n• 選項 C（前端拼接樣板）：這是 Prompt Tuning 或 Prefix-Tuning，並非矩陣分解適應。\n• 選項 D（1-bit 二值化）：這是極端模型量化（Quantization，如 BitNet / 1-bit LLMs），與低秩分解無關。\n\n【核心觀念連結】：PEFT（參數高效微調）必考三大主流：\n• 【LoRA / QLoRA】：最主流，低秩矩陣旁路分解，保證效果且零推論額外延遲。\n• 【Prefix-Tuning / Prompt-Tuning】：在輸入序列前方加入可訓練的虛擬 Embedding。\n• 【Adapter】：在 Transformer 各層中間插入小型前饋神經網路層。",
     "paper": "Hu et al., ICLR 2022 - 《LoRA: Low-Rank Adaptation of Large Language Models》"
   }
 ]
