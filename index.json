@@ -1,0 +1,66 @@
+{
+  "total_concepts": 350,
+  "total_categories": 10,
+  "categories": [
+    {
+      "file": "01_ml_fundamentals.json",
+      "key": "01_ml_fundamentals",
+      "name": "機器學習基礎與特徵工程",
+      "count": 35
+    },
+    {
+      "file": "02_deep_learning.json",
+      "key": "02_deep_learning",
+      "name": "深度學習架構與優化算法",
+      "count": 35
+    },
+    {
+      "file": "03_transformer_llm.json",
+      "key": "03_transformer_llm",
+      "name": "Transformer與大型語言模型",
+      "count": 35
+    },
+    {
+      "file": "04_prompt_engineering.json",
+      "key": "04_prompt_engineering",
+      "name": "提示工程與生成式互動",
+      "count": 35
+    },
+    {
+      "file": "05_rag_vector_search.json",
+      "key": "05_rag_vector_search",
+      "name": "RAG架構與向量檢索系統",
+      "count": 35
+    },
+    {
+      "file": "06_fine_tuning_alignment.json",
+      "key": "06_fine_tuning_alignment",
+      "name": "模型微調、PEFT與對齊技術",
+      "count": 35
+    },
+    {
+      "file": "07_evaluation_benchmarks.json",
+      "key": "07_evaluation_benchmarks",
+      "name": "模型評估指標與評測基準",
+      "count": 35
+    },
+    {
+      "file": "08_compression_inference.json",
+      "key": "08_compression_inference",
+      "name": "模型壓縮、量化與推論加速",
+      "count": 35
+    },
+    {
+      "file": "09_mlops_agents.json",
+      "key": "09_mlops_agents",
+      "name": "MLOps維運與AI Agent架構",
+      "count": 35
+    },
+    {
+      "file": "10_governance_safety_ethics.json",
+      "key": "10_governance_safety_ethics",
+      "name": "AI治理、資安、法規與倫理",
+      "count": 35
+    }
+  ]
+}
