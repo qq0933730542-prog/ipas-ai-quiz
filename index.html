@@ -94,23 +94,26 @@
 
     <div class="max-w-5xl mx-auto px-4 mt-5">
 
-      <!-- ==================== TAB 1: 全真考場（整卷作答 + 交卷按鈕 + 紅綠對照線） ==================== -->
+      <!-- ==================== TAB 1: 全真考場 ==================== -->
       <section id="tabContent-quiz" class="space-y-4">
         <!-- 考場功能選單 -->
         <div class="bg-indigo-900 text-white p-3.5 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-2 text-xs">
           <div class="flex flex-wrap items-center gap-2">
-            <button onclick="loadOfficial790()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3 py-1.5 rounded-lg transition">
-              📥 載入官方 790 題庫抽卷
+            <button onclick="startMockExam(50)" id="btnMock50" class="bg-amber-500 hover:bg-amber-600 text-indigo-950 font-bold px-3.5 py-1.5 rounded-lg transition shadow-xs flex items-center gap-1">
+              ⏱️ 75分鐘模考 (50題全真試卷)
             </button>
-            <button onclick="startMockExam(50)" class="bg-indigo-700 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg transition">
-              ⏱️ 75分鐘模考 (50題)
+            <button onclick="loadOfficial790(20)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3 py-1.5 rounded-lg transition">
+              📥 790題庫抽20題
             </button>
-            <button onclick="restartExam()" class="bg-indigo-800 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition">
-              🔄 重新抽題測驗
+            <button onclick="restartExam()" class="bg-indigo-700 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg transition">
+              🔄 重新整理當前試卷
             </button>
           </div>
-          <div id="examTimerContainer" class="hidden items-center bg-indigo-950 px-3 py-1 rounded-lg text-amber-300 font-mono font-bold">
-            ⏰ 剩餘：<span id="examTimer">75:00</span>
+          <div id="examTimerContainer" class="hidden items-center gap-2 bg-indigo-950 border border-amber-400/40 px-3 py-1 rounded-lg text-amber-300 font-mono font-bold">
+            <span>⏰ 剩餘：<span id="examTimer">75:00</span></span>
+            <button onclick="stopExamAndTimer(true)" class="bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-sans px-2 py-0.5 rounded transition">
+              🛑 退出本次考試
+            </button>
           </div>
         </div>
 
@@ -136,7 +139,7 @@
             </div>
           </div>
           <p class="text-xs text-slate-500">
-            下方已為您開啟<b>【詳細檢討模式】</b>：<span class="text-emerald-700 font-bold">綠色線為官方正解</span>、<span class="text-rose-700 font-bold">紅色線為您的錯誤選擇</span>，並附帶詳解與權威論文對照。
+            下方已開啟<b>【詳細檢討模式】</b>：<span class="text-emerald-700 font-bold">綠色線為官方正解</span>、<span class="text-rose-700 font-bold">紅色線為您的錯誤選擇</span>，並附帶詳解與權威論文對照。
           </p>
           <div class="flex justify-center gap-2 pt-1">
             <button onclick="retryWrongOnly()" id="btnRetryWrong" class="hidden bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
@@ -146,6 +149,11 @@
               🔄 重新測驗整份試卷
             </button>
           </div>
+        </div>
+
+        <!-- 考卷載入提示 -->
+        <div id="quizLoadingTip" class="hidden text-center py-6 text-xs text-indigo-600 font-medium">
+          ⏳ 正在載入試題中，請稍候...
         </div>
 
         <!-- 題目列表渲染區 -->
@@ -208,7 +216,7 @@
         <div id="conceptListContainer" class="space-y-4"></div>
       </section>
 
-      <!-- ==================== TAB 4: 3D 記憶翻牌卡 (Flashcards) ==================== -->
+      <!-- ==================== TAB 4: 3D 記憶翻牌卡 ==================== -->
       <section id="tabContent-flashcards" class="hidden space-y-5">
         <div class="bg-indigo-900 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
           <div>
@@ -282,7 +290,7 @@
         </div>
       </section>
 
-      <!-- ==================== TAB 5: 做題分析與弱點診斷 ==================== -->
+      <!-- ==================== TAB 5: 做題分析 ==================== -->
       <section id="tabContent-analytics" class="hidden space-y-5">
         <div class="grid grid-cols-4 gap-3 text-center">
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
@@ -475,8 +483,21 @@
       checkAuthStatus();
     }
 
-    // ==================== 模組分頁切換 ====================
+    // ==================== 模組分頁切換（含考試中攔截確認） ====================
+    let currentTab = "quiz";
+
     function switchTab(tabId) {
+      // 若當前在考場，且正在進行計時考試且尚未交卷，則強制要求確認退出
+      if (currentTab === "quiz" && tabId !== "quiz" && isExamRunning && !isSubmitted) {
+        const confirmExit = confirm("⚠️ 75 分鐘全真模擬考正在計時進行中！\n\n切換至其他分頁將會【中斷並退出本次考試】（計時將會停止，本次作答將不會保留）。\n\n請問您確定要退出當前考試嗎？");
+        if (!confirmExit) {
+          return; // 使用者按取消，留在考試介面繼續測驗！
+        }
+        // 使用者確認退出：停止考試與計時
+        stopExamAndTimer(false);
+      }
+
+      currentTab = tabId;
       const tabs = ["quiz", "retry", "concepts", "flashcards", "analytics"];
       tabs.forEach(t => {
         const content = document.getElementById(`tabContent-${t}`);
@@ -498,109 +519,867 @@
       if (tabId === "analytics") updateAnalyticsView();
     }
 
-    // ==================== 核心題庫（預設 10 道標準全真考題） ====================
-    const initialExamQuestions = [
-      {
-        id: "1",
-        subject: "初級科目一",
-        category: "機器學習基礎",
-        question: "在機器學習任務中，若希望根據房屋的坪數、屋齡與地段來預測其成交價格（連續數值），應採用下列何種模型？",
-        options: { "A": "分群（Clustering）", "B": "迴歸（Regression）", "C": "關聯規則（Association Rule）", "D": "主成分分析（PCA）" },
-        answer: ["B"],
-        explanation: "預測連續數值目標屬於監督式學習中的『迴歸』任務；分類任務預測離散類別，分群與降維則多為非監督式學習。",
-        paper: "Hastie et al. - 《The Elements of Statistical Learning》"
-      },
-      {
-        id: "2",
-        subject: "初級科目一",
-        category: "模型評估指標",
-        question: "在醫療診斷或罕見疾病篩檢情境中，最希望避免『有病卻被誤判為沒病（漏診）』的情況，此時最應優先追求哪一項評估指標的極大化？",
-        options: { "A": "精確率（Precision）", "B": "召回率（Recall / Sensitivity）", "C": "特異度（Specificity）", "D": "準確率（Accuracy）" },
-        answer: ["B"],
-        explanation: "漏診代表偽陰性（False Negative, FN）。Recall = TP / (TP + FN)，當 FN 越小，Recall 越高。因此避免漏診時應優先提升 Recall。",
-        paper: "Davis & Goadrich, ICML 2006 - 《The Relationship Between Precision-Recall and ROC Curves》"
-      },
-      {
-        id: "3",
-        subject: "初級科目一",
-        category: "過擬合與正規化",
-        question: "當神經網路在訓練集上表現極佳，但在測試集上泛化能力很差時，下列哪項手法『無法』有效減緩過擬合？",
-        options: { "A": "加入 Dropout 機制", "B": "加入 L2 正則化（Weight Decay）", "C": "大幅增加網路隱藏層的神經元數量與深度", "D": "增加訓練資料多樣性（Data Augmentation）" },
-        answer: ["C"],
-        explanation: "大幅增加神經元數量與深度會提高模型容量（Capacity），反而會加劇過擬合。其餘三項皆為抑制過擬合的標準手段。",
-        paper: "Srivastava et al., JMLR 2014 - 《Dropout: A Simple Way to Prevent Overfitting》"
-      },
-      {
-        id: "4",
-        subject: "初級科目二",
-        category: "RAG與向量系統",
-        question: "企業在導入大型語言模型（LLM）建置內部知識庫時，為了降低『幻覺（Hallucination）』並補充內部最新私有資料，最常採取的低成本架構為何？",
-        options: { "A": "從頭重新預訓練基底大模型", "B": "檢索增強生成（Retrieval-Augmented Generation, RAG）", "C": "大幅調高模型的 Temperature 參數", "D": "使用全參數量微調（Full Fine-Tuning）" },
-        answer: ["B"],
-        explanation: "RAG 透過向量比對先從內部庫取得文件片段作為 Context 注入 Prompt，由 LLM 整理回答，成本低且能大幅緩解幻覺。",
-        paper: "Lewis et al., NeurIPS 2020 - 《Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks》"
-      },
-      {
-        id: "5",
-        subject: "初級科目二",
-        category: "提示工程與生成式AI",
-        question: "在 Prompt Engineering 中，要求模型在給出答案前先輸出中間推導步驟（如：『請一步一步思考』），此手法稱為？",
-        options: { "A": "Zero-shot Prompting", "B": "思維鏈（Chain-of-Thought, CoT）", "C": "Prompt 注入攻擊", "D": "量化壓縮（Quantization）" },
-        answer: ["B"],
-        explanation: "思維鏈（CoT）引導模型展開中間步驟推理，能顯著提升複雜邏輯與算術題目的正確率。",
-        paper: "Wei et al., NeurIPS 2022 - 《Chain-of-Thought Prompting Elicits Reasoning in Large Language Models》"
-      },
-      {
-        id: "6",
-        subject: "初級科目二",
-        category: "模型參數調校",
-        question: "在呼叫生成式 AI API 時，若希望模型生成的回答具備更高的創造力與多樣性，通常應如何調整 Temperature 參數？",
-        options: { "A": "調低接近 0（如 0.1）", "B": "調高（如 0.8 ~ 1.0）", "C": "將 Temperature 設為負數", "D": "Temperature 與創造力無關" },
-        answer: ["B"],
-        explanation: "Temperature 決定輸出機率分佈平滑度。越接近 0 越偏向 Greedy 確定性輸出；調高會使低機率 Token 更有機會被選中，增加創造力與隨機性。",
-        paper: "Ackley et al., 1985 - 《A Learning Algorithm for Boltzmann Machines》"
-      },
-      {
-        id: "7",
-        subject: "初級科目一",
-        category: "特徵工程與資料前處理",
-        question: "在特徵縮放（Feature Scaling）中，將數值特徵線性變換縮放至 區間的方法稱為？",
-        options: { "A": "Z-score 標準化（Standardization）", "B": "最小最大值正規化（Min-Max Normalization）", "C": "主成分分析（PCA）", "D": "One-Hot 編碼" },
-        answer: ["B"],
-        explanation: "Min-Max Normalization 公式為 (X - Xmin) / (Xmax - Xmin)，將資料線性對齊至；Z-score 是將平均數轉為 0、標準差轉為 1。",
-        paper: "Scikit-Learn Preprocessing Documentation"
-      },
-      {
-        id: "8",
-        subject: "初級科目二",
-        category: "AI倫理法規",
-        question: "依據台灣國科會《人工智慧基本法（草案）》與數位發展部公部門 AI 應用指引，下列哪項敘述為正確的核心原則？",
-        options: { "A": "公務機關可直接將高度機密公文上傳至未授權之公有雲 AI 模型分析", "B": "AI 系統產出之內容應具備透明性與可解釋性，並由人類負最終決策責任", "C": "生成式 AI 生成之內容具有絕對法律權利，可直接列為專利發明人", "D": "導入 AI 應完全取代人類審查，不得保留人工覆核環節" },
-        answer: ["B"],
-        explanation: "AI 倫理與各國指引一致強調 Human-in-the-loop（人機協作/人為最終問責），AI 不具備法律主體專利人地位，機密公文亦嚴禁上傳未授權公有雲。",
-        paper: "台灣國科會《人工智慧基本法（草案）》& NIST AI RMF 1.0"
-      },
-      {
-        id: "9",
-        subject: "初級科目一",
-        category: "深度學習架構",
-        question: "在卷積神經網路（CNN）中，『池化層（Pooling Layer，如 Max Pooling）』的主要功能為何？",
-        options: { "A": "計算損失函數的梯度", "B": "降低特徵維度、減少參數量並保留主要特徵", "C": "將連續數值轉換為文字標籤", "D": "取代 Softmax 進行最後分類" },
-        answer: ["B"],
-        explanation: "池化層用於降低特徵圖（Feature Map）空間維度，減少計算量與防止過擬合，同時具備一定的平移不變性。",
-        paper: "LeCun et al., 1998 - 《Gradient-Based Learning Applied to Document Recognition》"
-      },
-      {
-        id: "10",
-        subject: "初級科目二",
-        category: "模型微調技術",
-        question: "在大型語言模型的高效微調技術中，LoRA（Low-Rank Adaptation）的核心原理為何？",
-        options: { "A": "凍結預訓練權重，透過引入低秩矩陣分解來訓練額外參數", "B": "將模型參數量修剪掉 90% 來提升推論速度", "C": "直接在提示詞前端拼接人工撰寫的樣板", "D": "將模型權重全數轉為 1-bit 二值化" },
-        answer: ["A"],
-        explanation: "LoRA 凍結原有大模型權重 W，透過旁路學習兩個低秩分解矩陣 A 與 B（ΔW = B × A），大幅降低微調所需的 GPU 顯存與可訓練參數量。",
-        paper: "Hu et al., ICLR 2022 - 《LoRA: Low-Rank Adaptation of Large Language Models》"
+    // 防誤觸關閉或刷新視窗
+    window.addEventListener("beforeunload", (e) => {
+      if (isExamRunning && !isSubmitted) {
+        e.preventDefault();
+        e.returnValue = "";
       }
-    ];
+    });
+
+    // ==================== 核心題庫（內建 50 道高頻全真試題） ====================
+    const initialExamQuestions = [
+  {
+    "id": "1",
+    "subject": "初級科目一",
+    "category": "機器學習基礎",
+    "question": "在機器學習任務中，若希望根據房屋的坪數、屋齡與地段來預測其成交價格（連續數值），應採用下列何種模型？",
+    "options": {
+      "A": "分群（Clustering）",
+      "B": "迴歸（Regression）",
+      "C": "關聯規則（Association Rule）",
+      "D": "主成分分析（PCA）"
+    },
+    "answer": [
+      "B"
+    ],
+    "explanation": "預測連續數值目標屬於監督式學習中的『迴歸』任務；分類任務預測離散類別，分群與降維則多為非監督式學習。",
+    "paper": "Hastie et al. - 《The Elements of Statistical Learning》"
+  },
+  {
+    "id": "2",
+    "subject": "初級科目一",
+    "category": "模型評估指標",
+    "question": "在醫療診斷或罕見疾病篩檢情境中，最希望避免『有病卻被誤判為沒病（漏診）』的情況，此時最應優先追求哪一項評估指標的極大化？",
+    "options": {
+      "A": "精確率（Precision）",
+      "B": "召回率（Recall / Sensitivity）",
+      "C": "特異度（Specificity）",
+      "D": "準確率（Accuracy）"
+    },
+    "answer": [
+      "B"
+    ],
+    "explanation": "漏診代表偽陰性（False Negative, FN）。Recall = TP / (TP + FN)，當 FN 越小，Recall 越高。因此避免漏診時應優先提升 Recall。",
+    "paper": "Davis & Goadrich, ICML 2006 - 《The Relationship Between Precision-Recall and ROC Curves》"
+  },
+  {
+    "id": "3",
+    "subject": "初級科目一",
+    "category": "過擬合與正規化",
+    "question": "當神經網路在訓練集上表現極佳，但在測試集上泛化能力很差時，下列哪項手法『無法』有效減緩過擬合？",
+    "options": {
+      "A": "加入 Dropout 機制",
+      "B": "加入 L2 正則化（Weight Decay）",
+      "C": "大幅增加網路隱藏層的神經元數量與深度",
+      "D": "增加訓練資料多樣性（Data Augmentation）"
+    },
+    "answer": [
+      "C"
+    ],
+    "explanation": "大幅增加神經元數量與深度會提高模型容量（Capacity），反而會加劇過擬合。其餘三項皆為抑制過擬合的標準手段。",
+    "paper": "Srivastava et al., JMLR 2014 - 《Dropout: A Simple Way to Prevent Overfitting》"
+  },
+  {
+    "id": "4",
+    "subject": "初級科目二",
+    "category": "RAG與向量系統",
+    "question": "企業在導入大型語言模型（LLM）建置內部知識庫時，為了降低『幻覺（Hallucination）』並補充內部最新私有資料，最常採取的低成本架構為何？",
+    "options": {
+      "A": "從頭重新預訓練基底大模型",
+      "B": "檢索增強生成（Retrieval-Augmented Generation, RAG）",
+      "C": "大幅調高模型的 Temperature 參數",
+      "D": "使用全參數量微調（Full Fine-Tuning）"
+    },
+    "answer": [
+      "B"
+    ],
+    "explanation": "RAG 透過向量比對先從內部庫取得文件片段作為 Context 注入 Prompt，由 LLM 整理回答，成本低且能大幅緩解幻覺。",
+    "paper": "Lewis et al., NeurIPS 2020 - 《Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks》"
+  },
+  {
+    "id": "5",
+    "subject": "初級科目二",
+    "category": "提示工程與生成式AI",
+    "question": "在 Prompt Engineering 中，要求模型在給出答案前先輸出中間推導步驟（如：『請一步一步思考』），此手法稱為？",
+    "options": {
+      "A": "Zero-shot Prompting",
+      "B": "思維鏈（Chain-of-Thought, CoT）",
+      "C": "Prompt 注入攻擊",
+      "D": "量化壓縮（Quantization）"
+    },
+    "answer": [
+      "B"
+    ],
+    "explanation": "思維鏈（CoT）引導模型展開中間步驟推理，能顯著提升複雜邏輯與算術題目的正確率。",
+    "paper": "Wei et al., NeurIPS 2022 - 《Chain-of-Thought Prompting Elicits Reasoning in Large Language Models》"
+  },
+  {
+    "id": "6",
+    "subject": "初級科目二",
+    "category": "模型參數調校",
+    "question": "在呼叫生成式 AI API 時，若希望模型生成的回答具備更高的創造力與多樣性，通常應如何調整 Temperature 參數？",
+    "options": {
+      "A": "調低接近 0（如 0.1）",
+      "B": "調高（如 0.8 ~ 1.0）",
+      "C": "將 Temperature 設為負數",
+      "D": "Temperature 與創造力無關"
+    },
+    "answer": [
+      "B"
+    ],
+    "explanation": "Temperature 決定輸出機率分佈平滑度。越接近 0 越偏向 Greedy 確定性輸出；調高會使低機率 Token 更有機會被選中，增加創造力與隨機性。",
+    "paper": "Ackley et al., 1985 - 《A Learning Algorithm for Boltzmann Machines》"
+  },
+  {
+    "id": "7",
+    "subject": "初級科目一",
+    "category": "特徵工程與資料前處理",
+    "question": "在特徵縮放（Feature Scaling）中，將數值特徵線性變換縮放至 [0, 1] 區間的方法稱為？",
+    "options": {
+      "A": "Z-score 標準化（Standardization）",
+      "B": "最小最大值正規化（Min-Max Normalization）",
+      "C": "主成分分析（PCA）",
+      "D": "One-Hot 編碼"
+    },
+    "answer": [
+      "B"
+    ],
+    "explanation": "Min-Max Normalization 公式為 (X - Xmin) / (Xmax - Xmin)，將資料線性對齊至 [0, 1]；Z-score 是將平均數轉為 0、標準差轉為 1。",
+    "paper": "Scikit-Learn Preprocessing Documentation"
+  },
+  {
+    "id": "8",
+    "subject": "初級科目二",
+    "category": "AI倫理法規",
+    "question": "依據台灣國科會《人工智慧基本法（草案）》與數位發展部公部門 AI 應用指引，下列哪項敘述為正確的核心原則？",
+    "options": {
+      "A": "公務機關可直接將高度機密公文上傳至未授權之公有雲 AI 模型分析",
+      "B": "AI 系統產出之內容應具備透明性與可解釋性，並由人類負最終決策責任",
+      "C": "生成式 AI 生成之內容具有絕對法律權利，可直接列為專利發明人",
+      "D": "導入 AI 應完全取代人類審查，不得保留人工覆核環節"
+    },
+    "answer": [
+      "B"
+    ],
+    "explanation": "AI 倫理與各國指引一致強調 Human-in-the-loop（人機協作/人為最終問責），AI 不具備法律主體專利人地位，機密公文亦嚴禁上傳未授權公有雲。",
+    "paper": "台灣國科會《人工智慧基本法（草案）》& NIST AI RMF 1.0"
+  },
+  {
+    "id": "9",
+    "subject": "初級科目一",
+    "category": "深度學習架構",
+    "question": "在卷積神經網路（CNN）中，『池化層（Pooling Layer，如 Max Pooling）』的主要功能為何？",
+    "options": {
+      "A": "計算損失函數的梯度",
+      "B": "降低特徵維度、減少參數量並保留主要特徵",
+      "C": "將連續數值轉換為文字標籤",
+      "D": "取代 Softmax 進行最後分類"
+    },
+    "answer": [
+      "B"
+    ],
+    "explanation": "池化層用於降低特徵圖（Feature Map）空間維度，減少計算量與防止過擬合，同時具備一定的平移不變性。",
+    "paper": "LeCun et al., 1998 - 《Gradient-Based Learning Applied to Document Recognition》"
+  },
+  {
+    "id": "10",
+    "subject": "初級科目二",
+    "category": "模型微調技術",
+    "question": "在大型語言模型的高效微調技術中，LoRA（Low-Rank Adaptation）的核心原理為何？",
+    "options": {
+      "A": "凍結預訓練權重，透過引入低秩矩陣分解來訓練額外參數",
+      "B": "將模型參數量修剪掉 90% 來提升推論速度",
+      "C": "直接在提示詞前端拼接人工撰寫的樣板",
+      "D": "將模型權重全數轉為 1-bit 二值化"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "LoRA 凍結原有大模型權重 W，透過旁路學習兩個低秩分解矩陣 A 與 B（ΔW = B × A），大幅降低微調所需的 GPU 顯存與可訓練參數量。",
+    "paper": "Hu et al., ICLR 2022 - 《LoRA: Low-Rank Adaptation of Large Language Models》"
+  },
+  {
+    "id": "11",
+    "subject": "初級科目一",
+    "category": "機器學習基礎",
+    "question": "在監督式機器學習中，下列哪一種演算法是基於多棵決策樹並採用『Bagging（裝袋法）』機制來降低方差的代表性模型？",
+    "options": {
+      "A": "隨機森林（Random Forest）",
+      "B": "梯度提升機（GBDT）",
+      "C": "邏輯迴歸（Logistic Regression）",
+      "D": "支援向量機（SVM）"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "隨機森林是 Bagging 的典型代表，利用隨機取樣建構多棵獨立決策樹並投票；GBDT 則是採用 Boosting（提升法）。",
+    "paper": "Breiman, Machine Learning 2001 - 《Random Forests》"
+  },
+  {
+    "id": "12",
+    "subject": "初級科目一",
+    "category": "模型評估指標",
+    "question": "當正負樣本比例極度不平衡（例如詐欺交易僅佔 0.1%）時，下列哪一項指標最容易產生『模型表現優秀』的誤導性假象？",
+    "options": {
+      "A": "準確率（Accuracy）",
+      "B": "F1-Score",
+      "C": "PR-AUC（精確率-召回率曲線下面積）",
+      "D": "Recall"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "在樣本極不平衡時，模型只要全部猜負樣本，準確率（Accuracy）就能高達 99.9%，但對正樣本的偵測能力為零，具高度誤導性。",
+    "paper": "He & Garcia, IEEE TKDE 2009 - 《Learning from Imbalanced Data》"
+  },
+  {
+    "id": "13",
+    "subject": "初級科目一",
+    "category": "深度學習架構",
+    "question": "Transformer 架構中，在計算 Scaled Dot-Product Attention 時，將 Q 與 K 點積結果除以根號 dk 的主要目的為何？",
+    "options": {
+      "A": "防止點積數值過大導致 Softmax 進入梯度極小的飽和區",
+      "B": "增加權重矩陣的非線性特徵",
+      "C": "強制將數值轉為整數以加速運算",
+      "D": "消除位置編碼的雜訊"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "當維度 dk 較大時，點積量級增大會將 Softmax 函數推入梯度非常微小的區域，導致梯度消失；除以根號 dk 能穩定方差。",
+    "paper": "Vaswani et al., NeurIPS 2017 - 《Attention Is All You Need》"
+  },
+  {
+    "id": "14",
+    "subject": "初級科目一",
+    "category": "深度學習架構",
+    "question": "何愷明等人提出的 ResNet（深度殘差網路）成功解決了深度神經網路訓練時的哪一項致命問題？",
+    "options": {
+      "A": "網路退化（Degradation Problem）與梯度消失",
+      "B": "資料集標註成本過高",
+      "C": "模型無法在 CPU 上執行",
+      "D": "卷積核感受野無法擴大"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "ResNet 透過殘差跳躍連接（Skip Connection）H(x) = F(x) + x，使梯度能暢通傳遞，解決了深層網路退化與梯度消失難題。",
+    "paper": "He et al., CVPR 2016 - 《Deep Residual Learning for Image Recognition》"
+  },
+  {
+    "id": "15",
+    "subject": "初級科目二",
+    "category": "RAG與向量系統",
+    "question": "在 RAG（檢索增強生成）系統中，計算使用者查詢向量與資料庫文本區塊向量之語意相似度時，最廣泛使用的度量方法為何？",
+    "options": {
+      "A": "餘弦相似度（Cosine Similarity）",
+      "B": "曼哈頓距離（Manhattan Distance）",
+      "C": "漢明距離（Hamming Distance）",
+      "D": "切比雪夫距離（Chebyshev Distance）"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "餘弦相似度透過計算兩向量夾角餘弦值來評估方向一致性，能有效排除文本長度所導致的向量模長偏差，是語意比對之首選。",
+    "paper": "Manning et al. - 《Introduction to Information Retrieval》"
+  },
+  {
+    "id": "16",
+    "subject": "初級科目二",
+    "category": "提示工程與生成式AI",
+    "question": "在提示詞中提供 2 到 3 個輸入與期望輸出的完整範例，讓模型學習輸入輸出模式後再給予測試題，此技術稱為？",
+    "options": {
+      "A": "Few-shot Prompting（少樣本提示）",
+      "B": "Zero-shot Prompting",
+      "C": "模型蒸餾（Distillation）",
+      "D": "數據剪枝（Pruning）"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "Few-shot Prompting 指在 Context 中提供少數高質量的範例示範（In-Context Learning），引導模型生成相應格式與語氣的輸出。",
+    "paper": "Brown et al., NeurIPS 2020 - 《Language Models are Few-Shot Learners》"
+  },
+  {
+    "id": "17",
+    "subject": "初級科目二",
+    "category": "模型參數調校",
+    "question": "在生成式 AI 的取樣參數中，『Top-P（核取樣，Nucleus Sampling）』的運作機制為何？",
+    "options": {
+      "A": "僅從累積機率達到閾值 P 的最小 Token 集合中進行抽樣",
+      "B": "固定選取機率最高的前 P 個單詞",
+      "C": "將模型全部權重縮小 P 倍",
+      "D": "將對話長度限制在 P 個字以內"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "Top-P（Nucleus Sampling）依照機率排序 Token，並累積機率直到超過閾值 P，只從這個動態集合中採樣，兼顧品質與多樣性。",
+    "paper": "Holtzman et al., ICLR 2020 - 《The Curious Case of Neural Text Degeneration》"
+  },
+  {
+    "id": "18",
+    "subject": "初級科目一",
+    "category": "機器學習基礎",
+    "question": "在非監督式學習中，K-Means 分群演算法的主要優化目標為何？",
+    "options": {
+      "A": "最小化群內平方誤差和（WCSS / Inertia）",
+      "B": "最大化分類決策邊界距離",
+      "C": "最大化交叉熵損失函數",
+      "D": "最小化特徵相關係數"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "K-Means 的目標函數是最小化所有樣本點到其所屬群中心（Centroid）的歐式距離平方和（Within-Cluster Sum of Squares）。",
+    "paper": "MacQueen, 1967 - 《Some Methods for classification and Analysis of Multivariate Observations》"
+  },
+  {
+    "id": "19",
+    "subject": "初級科目一",
+    "category": "特徵工程與資料前處理",
+    "question": "對於無順序關係的類別型特徵（例如汽車顏色：紅、藍、黑），最佳的數值轉換方式為何？",
+    "options": {
+      "A": "獨熱編碼（One-Hot Encoding）",
+      "B": "標籤編碼（Label Encoding，轉為 1, 2, 3）",
+      "C": "除以最大值歸一化",
+      "D": "取自然對數轉換（Log Transform）"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "若使用 Label Encoding（1, 2, 3），線性模型或神經網路會誤以為類別間存在數值大小或距離順序關係；無序類別應使用 One-Hot Encoding。",
+    "paper": "Scikit-Learn Preprocessing User Guide"
+  },
+  {
+    "id": "20",
+    "subject": "初級科目二",
+    "category": "模型微調技術",
+    "question": "微調大型語言模型時，使用人類反饋強化學習（RLHF）的主要目的為何？",
+    "options": {
+      "A": "使模型輸出符合人類價值觀（安全、誠實、有用，Alignment）",
+      "B": "增加模型的參數量與網路深度",
+      "C": "加速模型在 GPU 上的矩陣相乘速度",
+      "D": "取代分詞器（Tokenizer）"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "RLHF（Reinforcement Learning from Human Feedback）用於對齊（Alignment），確保模型生成內容安全、減少偏見與有害輸出。",
+    "paper": "Ouyang et al., NeurIPS 2022 - 《Training language models to follow instructions with human feedback》"
+  },
+  {
+    "id": "21",
+    "subject": "初級科目一",
+    "category": "機器學習基礎",
+    "question": "在機器學習偏差-變異數權衡（Bias-Variance Tradeoff）中，模型發生『欠擬合（Underfitting）』通常意味著？",
+    "options": {
+      "A": "高偏差（High Bias），模型過於簡單無法捕捉數據規律",
+      "B": "高變異數（High Variance），模型過度複雜記憶雜訊",
+      "C": "測試集準確率顯著高於訓練集",
+      "D": "學習率過大導致數值發散"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "欠擬合代表 High Bias，模型表達能力不足；過擬合則代表 High Variance，模型對訓練數據擾動極度敏感。",
+    "paper": "Geman et al., Neural Computation 1992 - 《Neural Networks and the Bias/Variance Dilemma》"
+  },
+  {
+    "id": "22",
+    "subject": "初級科目二",
+    "category": "邊緣運算與優化",
+    "question": "將深度學習模型權重從原本的 32 位元浮點數（FP32）轉換為 8 位元整數（INT8）的技術稱為？",
+    "options": {
+      "A": "模型量化（Quantization）",
+      "B": "模型剪枝（Pruning）",
+      "C": "知識蒸餾（Knowledge Distillation）",
+      "D": "資料增強（Augmentation）"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "量化（Quantization）將高精度數值映射為低精度整數，能大幅降低模型記憶體佔用並提升推論速度，利於邊緣部署。",
+    "paper": "Jacob et al., CVPR 2018 - 《Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference》"
+  },
+  {
+    "id": "23",
+    "subject": "初級科目二",
+    "category": "AI倫理法規",
+    "question": "使用者利用生成式 AI 工具時，惡意設計特殊提示詞誘騙模型繞過內建安全防護機制並輸出受限內容，此攻擊手法稱為？",
+    "options": {
+      "A": "越獄與提示注入攻擊（Jailbreaking / Prompt Injection）",
+      "B": "DDoS 分散式阻斷服務",
+      "C": "SQL 資料隱碼攻擊",
+      "D": "中間人攻擊（MITM）"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "Prompt Injection / Jailbreak 指透過精心設計的提示詞覆蓋系統原有指令，突破模型道德或安全防線。",
+    "paper": "Perez & Ribeiro, arXiv 2022 - 《Ignore This Title and Hack: Jailbreaks in Large Language Models》"
+  },
+  {
+    "id": "24",
+    "subject": "初級科目一",
+    "category": "機器學習基礎",
+    "question": "主成分分析（PCA）是一種廣泛應用的降維演算法，其核心思想是尋找使數據在哪個方向上投影最大的正交軸？",
+    "options": {
+      "A": "變異數（Variance）最大化",
+      "B": "平均值最大化",
+      "C": "熵（Entropy）最小化",
+      "D": "類別標籤差異最大化"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "PCA 是無監督線性降維技術，透過特徵值分解找出投影後變異數最大的正交主成分方向，盡可能保留原始資訊量。",
+    "paper": "Jolliffe, 2002 - 《Principal Component Analysis》"
+  },
+  {
+    "id": "25",
+    "subject": "初級科目二",
+    "category": "RAG與向量系統",
+    "question": "在建置 RAG 系統時，若將原始長篇文件切割成多個文字塊（Chunk），加入『區塊重疊（Chunk Overlap）』的主要目的為何？",
+    "options": {
+      "A": "避免關鍵概念恰好被切分在斷點邊界而遺失前後上下文",
+      "B": "縮小向量資料庫的體積",
+      "C": "降低 Embedding 模型的參數量",
+      "D": "加快搜尋速度"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "Chunk Overlap（如設置 10%~20% 重疊）能保留跨切分點的語意連貫性，避免實體名詞或句子被生硬截斷導致檢索失準。",
+    "paper": "LangChain Documentation on Text Splitters"
+  },
+  {
+    "id": "26",
+    "subject": "初級科目一",
+    "category": "深度學習架構",
+    "question": "在自然語言處理中，BERT 模型採用哪一種預訓練任務來讓模型同時學習上下文的雙向語意表徵？",
+    "options": {
+      "A": "遮罩語言模型（Masked Language Model, MLM）",
+      "B": "下一個詞預測（Next Token Prediction）",
+      "C": "對抗生成網路（GAN）",
+      "D": "強化學習策略梯度"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "BERT 隨機遮蔽 15% 的詞彙（MLM 完形填空），強制模型根據該詞的上文和下文進行預測，達成真正的深層雙向理解。",
+    "paper": "Devlin et al., NAACL 2019 - 《BERT: Pre-training of Deep Bidirectional Transformers》"
+  },
+  {
+    "id": "27",
+    "subject": "初級科目二",
+    "category": "提示工程與生成式AI",
+    "question": "在與 LLM 對話時，設定『系統角色提示（System Prompt / Role Prompting）』的主要功能為何？",
+    "options": {
+      "A": "設定模型的專業身分、回覆風格、限制條件與遵循規範",
+      "B": "重新訓練模型的神經網路權重",
+      "C": "改變模型的底層 Python 直譯器版本",
+      "D": "防止 GPU 溫度過高"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "System Prompt 是提供給模型的最高優先權全域指引，用以約束模型角色定位、語氣風格、邊界規範與輸出格式。",
+    "paper": "OpenAI Prompt Engineering Guide"
+  },
+  {
+    "id": "28",
+    "subject": "初級科目一",
+    "category": "模型評估指標",
+    "question": "在二分類模型的混淆矩陣中，偽陽性（False Positive, FP）代表的含義為何？",
+    "options": {
+      "A": "實際為負樣本，卻被模型誤判為正樣本（誤報）",
+      "B": "實際為正樣本，卻被模型誤判為負樣本（漏報）",
+      "C": "實際為正樣本，模型預測為正樣本",
+      "D": "實際為負樣本，模型預測為負樣本"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "FP 是假警報（Type I Error），指實質為負（如垃圾郵件過濾器將正常郵件誤判為垃圾郵件）。",
+    "paper": "Fawcett, Pattern Recognition Letters 2006 - 《An introduction to ROC analysis》"
+  },
+  {
+    "id": "29",
+    "subject": "初級科目一",
+    "category": "機器學習基礎",
+    "question": "K 折交叉驗證（K-Fold Cross Validation）最主要的目的為何？",
+    "options": {
+      "A": "更客觀地評估模型的泛化能力並減少資料劃分偏差",
+      "B": "直接增加訓練數據的總數量",
+      "C": "減少神經網路的權重參數量",
+      "D": "自動消除資料集中的缺失值"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "K-Fold 將數據均分為 K 等份，輪流以 K-1 份訓練、1 份驗證，取平均值以獲得更具代表性且低方差的模型性能評估。",
+    "paper": "Kohavi, IJCAI 1995 - 《A Study of Cross-Validation and Bootstrap for Accuracy Estimation》"
+  },
+  {
+    "id": "30",
+    "subject": "初級科目二",
+    "category": "AI維運與MLOps",
+    "question": "在 AI 系統上線營運後，由於真實世界的環境、用戶習慣隨時間改變，導致輸入特徵的統計分佈發生實質改變，此現象稱為？",
+    "options": {
+      "A": "資料漂移（Data Drift / Covariate Shift）",
+      "B": "梯度爆炸（Exploding Gradient）",
+      "C": "冷啟動（Cold Start）",
+      "D": "死神經元（Dead Neurons）"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "Data Drift 指輸入特徵 P(X) 的分佈隨時間推移發生變化，會導致上線的模型準確度逐漸下滑，需要透過持續監控與再訓練應對。",
+    "paper": "Gama et al., ACM Computing Surveys 2014 - 《A Survey on Concept Drift Adaptation》"
+  },
+  {
+    "id": "31",
+    "subject": "初級科目一",
+    "category": "深度學習架構",
+    "question": "卷積神經網路（CNN）相較於全連接前饋神經網路（FCN），能大幅減少圖像處理參數量並保留空間特徵的兩大核心特性為何？",
+    "options": {
+      "A": "局部連接（Local Receptive Fields）與權重共享（Weight Sharing）",
+      "B": "自注意力機制與位置編碼",
+      "C": "雙向循環與門控機制",
+      "D": "隨機丟棄與批量正規化"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "CNN 利用卷積核在局部感受野上進行滑動運算，且整個特徵圖共享同一組卷積核權重，大幅降低參數量並實現平移不變性。",
+    "paper": "LeCun et al., Proceedings of the IEEE 1998"
+  },
+  {
+    "id": "32",
+    "subject": "初級科目二",
+    "category": "AI倫理法規",
+    "question": "依據 NIST AI RMF 與國際可解釋人工智慧（XAI）標準，當 AI 模型應用於金融核貸或司法量刑等高風險場景時，系統必須提供？",
+    "options": {
+      "A": "決策依據之透明度與可解釋性（Explainability）",
+      "B": "完全閉源的專利保護演算法",
+      "C": "100% 絕對無任何誤差的擔保",
+      "D": "全自動執行且免除人類干預"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "高風險 AI 應用涉及人民重大權利義務，必須具備可解釋性與透明度（Explainability & Transparency），避免黑箱決策侵犯權益。",
+    "paper": "NIST Special Publication 1270 - 《Towards a Standard for Identifying and Managing Bias in Artificial Intelligence》"
+  },
+  {
+    "id": "33",
+    "subject": "初級科目一",
+    "category": "深度學習架構",
+    "question": "在訓練深度神經網路時，加入批次正規化（Batch Normalization, BN）帶來的主要效益不包括下列何者？",
+    "options": {
+      "A": "保證模型推論延遲降低為零",
+      "B": "加速神經網路收斂速度",
+      "C": "允許使用較大的學習率",
+      "D": "具備輕微的正規化效果，減少對 Dropout 的依賴"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "Batch Normalization 透過穩定內部協變量偏移（Internal Covariate Shift）加速收斂與穩定訓練，但推論時仍需計算，並不能消除延遲。",
+    "paper": "Ioffe & Szegedy, ICML 2015 - 《Batch Normalization》"
+  },
+  {
+    "id": "34",
+    "subject": "初級科目二",
+    "category": "提示工程與生成式AI",
+    "question": "若要求大型語言模型輸出格式必須嚴格符合特定 JSON 結構以供後端程式解析，下列哪項做法最為可靠有效？",
+    "options": {
+      "A": "啟用模型供應商提供的結構化輸出（Structured Outputs / JSON Mode）並提供 JSON Schema",
+      "B": "將 Temperature 設為最大值 2.0",
+      "C": "只在提示詞中重複寫十次『請給我 JSON』",
+      "D": "關閉模型的所有安全過濾器"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "當代 API（如 OpenAI / Gemini）支援 JSON Mode 或 Structured Outputs，可在解碼階段透過語法限制（Grammar-based Decoding）強制符合 Schema。",
+    "paper": "OpenAI Documentation on Structured Outputs"
+  },
+  {
+    "id": "35",
+    "subject": "初級科目一",
+    "category": "機器學習基礎",
+    "question": "支援向量機（SVM）演算法在分類時，其核心目標是找出具有哪種特性的最佳決策邊界（Hyperplane）？",
+    "options": {
+      "A": "使兩類別支持向量間的間隔（Margin）最大化",
+      "B": "使所有特徵的相關係數為 0",
+      "C": "使神經元激活值總和最大",
+      "D": "使決策樹的深度最大"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "SVM 尋找具有最大間隔（Maximum Margin）的超平面，以取得最佳的泛化能力；距離超平面最近的樣本點稱為支持向量（Support Vectors）。",
+    "paper": "Cortes & Vapnik, Machine Learning 1995 - 《Support-vector networks》"
+  },
+  {
+    "id": "36",
+    "subject": "初級科目二",
+    "category": "RAG與向量系統",
+    "question": "在進階 RAG 架構中，結合傳統 BM25（關鍵字檢索）與稠密向量檢索（Dense Vector Retrieval）的技術稱為？",
+    "options": {
+      "A": "混合檢索（Hybrid Search）",
+      "B": "模型蒸餾",
+      "C": "零樣本提示",
+      "D": "梯度累積"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "Hybrid Search 同時結合關鍵字精確匹配（BM25 擅長專有名詞、代號）與語意向量匹配（向量擅長同義詞與概念），能大幅提升檢索召回率與準確度。",
+    "paper": "Pinecone & Weaviate Hybrid Search Architecture Guides"
+  },
+  {
+    "id": "37",
+    "subject": "初級科目一",
+    "category": "機器學習基礎",
+    "question": "在特徵工程中，若資料集包含『年齡（0~100）』與『年收入（300,000~10,000,000）』兩個特徵，若不進行特徵縮放，對下列哪種演算法影響最小？",
+    "options": {
+      "A": "決策樹（Decision Tree）",
+      "B": "K-近鄰演算法（KNN）",
+      "C": "支援向量機（SVM）",
+      "D": "邏輯迴歸（Logistic Regression）"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "決策樹與樹狀模型（如隨機森林、XGBoost）是基於單一特徵的閾值切分，數值絕對大小不影響切分順序，因此對特徵縮放不敏感；基於距離或梯度的演算法則極度敏感。",
+    "paper": "Hastie et al. - 《The Elements of Statistical Learning》"
+  },
+  {
+    "id": "38",
+    "subject": "初級科目二",
+    "category": "邊緣運算與優化",
+    "question": "將龐大教師模型（Teacher Model）學到的知識轉移至參數量小得多、易於邊緣端部署的學生模型（Student Model）的技術稱為？",
+    "options": {
+      "A": "知識蒸餾（Knowledge Distillation）",
+      "B": "多模態對齊",
+      "C": "自注意力機制",
+      "D": "詞嵌入（Word Embedding）"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "知識蒸餾透過讓小模型（學生）學習大模型（教師）輸出的軟標籤機率分佈（Soft Targets），保留豐富語意並達成模型輕量化。",
+    "paper": "Hinton et al., NeurIPS 2015 Workshop - 《Distilling the Knowledge in a Neural Network》"
+  },
+  {
+    "id": "39",
+    "subject": "初級科目一",
+    "category": "深度學習架構",
+    "question": "在神經網路激活函數中，ReLU（Rectified Linear Unit, f(x) = max(0, x)）相較於 Sigmoid 函數的最大優勢為何？",
+    "options": {
+      "A": "在正數區間導數恆為 1，能大幅減緩梯度消失問題並加快運算",
+      "B": "輸出值嚴格限制在 0 到 1 之間",
+      "C": "可以將特徵自動降維至二維空間",
+      "D": "在 x < 0 時依然保持高梯度傳遞"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "Sigmoid 在輸入過大或過小時導數趨近於 0，導致深度網絡梯度消失；ReLU 在正區間梯度為常數 1 且計算簡單，能大幅加速深網訓練。",
+    "paper": "Nair & Hinton, ICML 2010 - 《Rectified Linear Units Improve Restricted Boltzmann Machines》"
+  },
+  {
+    "id": "40",
+    "subject": "初級科目二",
+    "category": "AI倫理法規",
+    "question": "依據現行智慧財產權與著作權法規之主流認定，由完全未經人類實質介入之純生成式 AI 創作出的圖畫或小說，其著作權歸屬為何？",
+    "options": {
+      "A": "不享有著作權（因為創作主體非自然人）",
+      "B": "歸 AI 模型開發公司所有",
+      "C": "歸提供雲端伺服器的機房所有人所有",
+      "D": "由 AI 模型自行享有法人地位與版稅"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "依台灣及美歐主流法規，著作權之保護對象限於『自然人之原創精神創作』，AI 缺乏權利能力主體資格，純 AI 生成無人為實質創作之產物不享著作權。",
+    "paper": "經濟部智慧財產局針對生成式 AI 著作權之解釋令函"
+  },
+  {
+    "id": "41",
+    "subject": "初級科目一",
+    "category": "特徵工程與資料前處理",
+    "question": "在資料預處理階段，針對連續型數值特徵中的缺失值（Missing Values），下列哪一項不是常見的合理處置方式？",
+    "options": {
+      "A": "直接隨機填入任意負整數而不加標記",
+      "B": "以平均數或中位數填補（Mean/Median Imputation）",
+      "C": "使用 KNN 或回歸模型預測填補",
+      "D": "若缺失比例過高則直接移除該特徵欄位"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "隨機填入未定義之任意數值會注入嚴重噪音，破壞特徵原有統計分佈；合適做法包括中位數填補、模型預測填補或刪除嚴重缺失列。",
+    "paper": "Little & Rubin - 《Statistical Analysis with Missing Data》"
+  },
+  {
+    "id": "42",
+    "subject": "初級科目二",
+    "category": "提示工程與生成式AI",
+    "question": "在與 LLM 互動時，採用『思維樹（Tree of Thoughts, ToT）』相較於傳統『思維鏈（CoT）』的主要優勢為何？",
+    "options": {
+      "A": "允許模型探索多個推理分支並具備回溯（Backtracking）與自我評估能力",
+      "B": "完全不需要任何 API 費用",
+      "C": "使模型的參數量縮小 50%",
+      "D": "只適用於翻譯任務"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "Tree of Thoughts（ToT）將推理過程視為樹狀搜索，模型可產出多個思維單元並進行自我評價與剪枝回溯，特別適用於複雜策略規劃。",
+    "paper": "Yao et al., NeurIPS 2023 - 《Tree of Thoughts: Deliberate Problem Solving with Large Language Models》"
+  },
+  {
+    "id": "43",
+    "subject": "初級科目一",
+    "category": "模型評估指標",
+    "question": "評估迴歸模型的預測品質時，MSE（均方誤差）相較於 MAE（平均絕對誤差）的主要特性為何？",
+    "options": {
+      "A": "對極端離群值（Outliers）賦予更大的懲罰權重",
+      "B": "完全不受離群值影響",
+      "C": "計算結果永遠小於零",
+      "D": "量綱與原始預測目標完全相同"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "MSE（Mean Squared Error）將誤差平方，因此對大誤差（離群值）懲罰呈二次方劇增；MAE 則對離群值較具魯棒性。",
+    "paper": "Willmott & Matsuura, Climate Research 2005 - 《Advantages of the mean absolute error (MAE) over the root mean squared error (RMSE)》"
+  },
+  {
+    "id": "44",
+    "subject": "初級科目二",
+    "category": "模型微調技術",
+    "question": "在 LoRA 衍生的高效微調技術 QLoRA 中，最關鍵的創新技術為何？",
+    "options": {
+      "A": "採用 4-bit NormalFloat（NF4）量化與雙重量化（Double Quantization）技術",
+      "B": "完全不使用 GPU 進行微調",
+      "C": "刪除神經網路中的所有注意力層",
+      "D": "將模型轉為強化學習環境"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "QLoRA 將預訓練權重量化至 4-bit NF4，並引入雙重量化與分頁優化器，使單張消費級顯卡（如 24GB RTX 3090）即可微調 33B/65B 大模型。",
+    "paper": "Dettmers et al., NeurIPS 2023 - 《QLoRA: Efficient Finetuning of Quantized LLMs》"
+  },
+  {
+    "id": "45",
+    "subject": "初級科目一",
+    "category": "深度學習架構",
+    "question": "在長短期記憶網路（LSTM）中，負責決定有多少前一時刻的細胞狀態資訊需要被丟棄的門控結構稱為？",
+    "options": {
+      "A": "遺忘門（Forget Gate）",
+      "B": "輸入門（Input Gate）",
+      "C": "輸出門（Output Gate）",
+      "D": "重置門（Reset Gate）"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "LSTM 透過遺忘門（Forget Gate, ft = σ(Wf · [ht-1, xt] + bf)）來決定前一刻的記憶要保留還是清空，有效緩解傳統 RNN 梯度消失問題。",
+    "paper": "Hochreiter & Schmidhuber, Neural Computation 1997 - 《Long Short-Term Memory》"
+  },
+  {
+    "id": "46",
+    "subject": "初級科目二",
+    "category": "AI維運與MLOps",
+    "question": "在 AI 系統持續整合與持續交付（CI/CD）生命週期中，『特徵庫（Feature Store）』的核心價值為何？",
+    "options": {
+      "A": "統一訓練與在線推論的特徵定義，防止訓練與服務偏差（Train-Serve Skew）",
+      "B": "自動生成假資料以擴充資料庫",
+      "C": "降低伺服器的電費支出",
+      "D": "取代關係型資料庫"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "Feature Store（如 Feast, Hopsworks）提供統一的特徵計算、儲存與版本控制，確保訓練期與線上即時推論使用完全一致的特徵邏輯。",
+    "paper": "Feast: Open Source Feature Store for Machine Learning"
+  },
+  {
+    "id": "47",
+    "subject": "初級科目一",
+    "category": "機器學習基礎",
+    "question": "在分類問題中，ROC 曲線的橫軸（X 軸）與縱軸（Y 軸）分別代表什麼指標？",
+    "options": {
+      "A": "X 軸為偽陽性率（FPR, 1-Specificity），Y 軸為真陽性率（TPR, Sensitivity）",
+      "B": "X 軸為精確率（Precision），Y 軸為召回率（Recall）",
+      "C": "X 軸為準確率，Y 軸為損失值",
+      "D": "X 軸為特徵數，Y 軸為樣本數"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "ROC 曲線（Receiver Operating Characteristic）橫軸為 False Positive Rate（FPR = FP / (FP + TN)），縱軸為 True Positive Rate（TPR = TP / (TP + FN)）。",
+    "paper": "Fawcett, 2006 - 《An introduction to ROC analysis》"
+  },
+  {
+    "id": "48",
+    "subject": "初級科目二",
+    "category": "AI倫理法規",
+    "question": "數位發展部《公部門使用生成式 AI 參考指引》中，對於公務人員使用 AI 產出公文書的規範，下列何者正確？",
+    "options": {
+      "A": "必須由承辦公務人員進行實質覆核，並由公務員負最終責任",
+      "B": "可將民眾個人病歷直接貼上非受信任公有雲 AI 摘要",
+      "C": "公文不得標註任何人工智慧輔助說明",
+      "D": "由 AI 自動發送公文，無需任何人為簽核"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "公部門使用生成式 AI 須嚴格落實人機協作，公務員須進行內容真實性與合規性之覆核，並對公文內容負最終法定行政責任。",
+    "paper": "數位發展部《行政院及所屬機關（構）使用生成式 AI 參考指引》"
+  },
+  {
+    "id": "49",
+    "subject": "初級科目一",
+    "category": "機器學習基礎",
+    "question": "在邏輯迴歸（Logistic Regression）模型中，將線性輸出 z 轉換為 (0, 1) 機率值的函數為何？",
+    "options": {
+      "A": "Sigmoid 函數",
+      "B": "ReLU 函數",
+      "C": "Tanh 函數",
+      "D": "Leaky ReLU 函數"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "Sigmoid 公式為 σ(z) = 1 / (1 + e^-z)，能將任何實數對齊映射至 (0, 1) 區間，作為分類事件發生的預測機率。",
+    "paper": "Bishop - 《Pattern Recognition and Machine Learning》"
+  },
+  {
+    "id": "50",
+    "subject": "初級科目二",
+    "category": "模型微調技術",
+    "question": "在近期大型語言模型微調對齊領域中，DPO（Direct Preference Optimization）相較於傳統 PPO 強化學習的最大優勢為何？",
+    "options": {
+      "A": "省去獨立獎勵模型（Reward Model）的訓練與強化學習複雜調參，直接透過偏好數據閉式解微調",
+      "B": "完全不需要任何人類偏好數據",
+      "C": "只適用於圖像生成模型",
+      "D": "將模型推論速度提升 100 倍"
+    },
+    "answer": [
+      "A"
+    ],
+    "explanation": "DPO 證明了可以透過對偶變換直接在偏好數據（Accepted vs. Rejected）上優化語言模型策略，避免了 PPO 不穩定的動態強化學習訓練流程。",
+    "paper": "Rafailov et al., NeurIPS 2023 - 《Direct Preference Optimization: Your Language Model is Secretly a Reward Model》"
+  }
+];
 
     // ==================== 5 維度核心概念庫資料庫 ====================
     const conceptDatabase = [
@@ -662,8 +1441,10 @@
     ];
 
     let examQuestions = [...initialExamQuestions];
+    let cachedOfficialPool = []; // 快取 790 題庫
     let userAnswers = {}; // { qId: ["A"] }
     let isSubmitted = false;
+    let isExamRunning = false; // 是否在計時考試中
     let lastWrongQuestions = [];
     let wrongQuestions = [];
     let topicAnalytics = {};
@@ -682,6 +1463,8 @@
       updateKeyStatus();
       initFlashcards();
       restartExam();
+      // 背景非阻塞預載 790 題庫
+      preload790Pool();
     }
 
     function updateSummary() {
@@ -692,6 +1475,45 @@
       document.getElementById("navWrongCount").innerText = wrongQuestions.length;
       const rTot = document.getElementById("retryWrongTotal");
       if (rTot) rTot.innerText = wrongQuestions.length;
+    }
+
+    // 背景載入 790 題庫
+    async function preload790Pool() {
+      if (cachedOfficialPool.length > 0) return cachedOfficialPool;
+      try {
+        const res = await fetch("https://yazelin.github.io/ipas-ai-quiz/questions.json");
+        const data = await res.json();
+        const rawList = data.questions || data;
+        const letters = ["A", "B", "C", "D", "E"];
+        cachedOfficialPool = rawList.map((raw, idx) => {
+          let opts = {};
+          if (Array.isArray(raw.options)) {
+            raw.options.forEach((opt, i) => { opts[letters[i]] = opt; });
+          } else {
+            opts = raw.options || {};
+          }
+          let ans = [];
+          if (typeof raw.answer === "number") ans = [letters[raw.answer]];
+          else if (Array.isArray(raw.answer)) ans = raw.answer.map(a => typeof a === "number" ? letters[a] : a);
+          else if (typeof raw.answer === "string") ans = [raw.answer.trim().toUpperCase()];
+
+          return {
+            id: raw.id || `Q-${idx + 1}`,
+            subject: raw.level || raw.subject || "初級",
+            category: raw.category || raw.topic || "歷屆試題",
+            type: ans.length > 1 ? "multiple" : "single",
+            question: raw.question,
+            options: opts,
+            answer: ans,
+            explanation: raw.explanation || "暫無官方解析。",
+            paper: "經濟部 iPAS 官方能力鑑定公告試題"
+          };
+        });
+        console.log(`成功載入官方題庫共 ${cachedOfficialPool.length} 題`);
+      } catch (e) {
+        console.warn("官方線上題庫載入失敗，將使用內建 50 題庫", e);
+      }
+      return cachedOfficialPool;
     }
 
     // 重新開始試卷
@@ -816,6 +1638,15 @@
         }
       }
 
+      // 停止計時器
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      isExamRunning = false;
+      document.getElementById("examTimerContainer").classList.add("hidden");
+      document.getElementById("examTimerContainer").classList.remove("flex");
+
       isSubmitted = true;
       document.getElementById("submitBar").classList.add("hidden");
 
@@ -885,50 +1716,29 @@
       restartExam();
     }
 
-    // 載入官方 790 題庫隨機抽題
-    async function loadOfficial790() {
-      if (!confirm("確定要載入官方 790 題題庫並抽取 20 題進行測驗嗎？")) return;
+    // 啟動 75 分鐘 50 題全真模考（確保完整抽出 50 題）
+    async function startMockExam(count = 50) {
+      const loadingTip = document.getElementById("quizLoadingTip");
+      loadingTip.classList.remove("hidden");
 
-      try {
-        const res = await fetch("https://yazelin.github.io/ipas-ai-quiz/questions.json");
-        const data = await res.json();
-        const rawList = data.questions || data;
-
-        const letters = ["A", "B", "C", "D", "E"];
-        const all790 = rawList.map((raw, idx) => {
-          let opts = {};
-          if (Array.isArray(raw.options)) {
-            raw.options.forEach((opt, i) => { opts[letters[i]] = opt; });
-          } else {
-            opts = raw.options || {};
-          }
-          let ans = [];
-          if (typeof raw.answer === "number") ans = [letters[raw.answer]];
-          else if (Array.isArray(raw.answer)) ans = raw.answer.map(a => typeof a === "number" ? letters[a] : a);
-          else if (typeof raw.answer === "string") ans = [raw.answer.trim().toUpperCase()];
-
-          return {
-            id: raw.id || `Q-${idx + 1}`,
-            subject: raw.level || raw.subject || "初級",
-            category: raw.category || raw.topic || "歷屆試題",
-            type: ans.length > 1 ? "multiple" : "single",
-            question: raw.question,
-            options: opts,
-            answer: ans,
-            explanation: raw.explanation || "暫無官方解析。",
-            paper: "經濟部 iPAS 官方能力鑑定公告試題"
-          };
-        });
-
-        examQuestions = all790.sort(() => 0.5 - Math.random()).slice(0, 20);
-        alert(`成功載入！已為您抽出 20 題模擬試題，開始作答！`);
-        restartExam();
-      } catch(err) {
-        alert("載入官方題庫失敗，請確認網路狀態。");
+      // 先嘗試取得 790 題庫，若離線則使用內建 50 題庫
+      let pool = cachedOfficialPool;
+      if (!pool || pool.length < count) {
+        pool = await preload790Pool();
       }
-    }
 
-    function startMockExam(count) {
+      // 若網路無法抓取 790 題，使用內建高頻 50 題
+      if (!pool || pool.length < count) {
+        pool = initialExamQuestions;
+      }
+
+      // 隨機洗牌並抽取 50 題
+      const shuffled = [...pool].sort(() => 0.5 - Math.random());
+      examQuestions = shuffled.slice(0, Math.min(count, shuffled.length));
+
+      loadingTip.classList.add("hidden");
+
+      // 啟動 75 分鐘倒數計時
       if (timerInterval) clearInterval(timerInterval);
       const container = document.getElementById("examTimerContainer");
       const display = document.getElementById("examTimer");
@@ -936,6 +1746,8 @@
       container.classList.add("flex");
 
       let remain = 75 * 60;
+      isExamRunning = true;
+
       timerInterval = setInterval(() => {
         remain--;
         const m = String(Math.floor(remain / 60)).padStart(2, '0');
@@ -943,11 +1755,70 @@
         display.innerText = `${m}:${s}`;
         if (remain <= 0) {
           clearInterval(timerInterval);
-          alert("時間到！自動為您交卷。");
+          timerInterval = null;
+          isExamRunning = false;
+          alert("⏰ 時間到！系統自動為您交卷結算。");
           submitExam();
         }
       }, 1000);
 
+      restartExam();
+      alert(`✅ 已為您生成全真模擬考卷！共 ${examQuestions.length} 題，測驗時間 75 分鐘，請把握時間作答！`);
+    }
+
+    // 放棄 / 中途退出考試
+    function stopExamAndTimer(promptConfirm = false) {
+      if (promptConfirm) {
+        if (!confirm("確定要放棄本次全真模考並退出嗎？\n（計時將會停止，本次作答紀錄不會保存）")) {
+          return;
+        }
+      }
+
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      isExamRunning = false;
+      const container = document.getElementById("examTimerContainer");
+      if (container) {
+        container.classList.add("hidden");
+        container.classList.remove("flex");
+      }
+      userAnswers = {};
+      restartExam();
+      if (promptConfirm) {
+        alert("已退出本次考試。");
+      }
+    }
+
+    // 載入官方 790 題庫抽題（如 20 題）
+    async function loadOfficial790(count = 20) {
+      if (!confirm(`確定要從官方 790 題庫隨機抽取 ${count} 題進行測驗嗎？`)) return;
+
+      const loadingTip = document.getElementById("quizLoadingTip");
+      loadingTip.classList.remove("hidden");
+
+      let pool = cachedOfficialPool;
+      if (!pool || pool.length === 0) {
+        pool = await preload790Pool();
+      }
+      if (!pool || pool.length === 0) {
+        pool = initialExamQuestions;
+      }
+
+      loadingTip.classList.add("hidden");
+      examQuestions = [...pool].sort(() => 0.5 - Math.random()).slice(0, count);
+
+      // 若有運行中的計時器則關閉
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      isExamRunning = false;
+      document.getElementById("examTimerContainer").classList.add("hidden");
+      document.getElementById("examTimerContainer").classList.remove("flex");
+
+      alert(`成功載入！已為您抽出 ${examQuestions.length} 題模擬試題，開始作答！`);
       restartExam();
     }
 
@@ -1160,7 +2031,7 @@
       }
     }
 
-    // ==================== TAB 4: 記憶翻牌卡 (Flashcards) ====================
+    // ==================== TAB 4: 記憶翻牌卡 ====================
     function initFlashcards() {
       flashcardList = conceptDatabase.map(c => ({
         id: c.id,
@@ -1230,7 +2101,7 @@
         id: `fc-${q.id}`,
         category: q.category,
         front: q.question,
-        backAnswer: `正確答案：${q.answer.join(", ")}\n\n${q.explanation}`,
+        backAnswer: `正確答案：${q.answer.join(", ")}\\n\\n${q.explanation}`,
         backMethod: "從錯題本加入之強化記憶卡片",
         backPaper: q.paper || "iPAS 歷屆考題精華",
         mastered: false
