@@ -1,0 +1,155 @@
+[
+  {
+    "id": "transformer",
+    "title": "Attention Is All You Need",
+    "chinese_title": "注意力就是你所需要的一切 (Transformer 架構開山之作)",
+    "authors": "Ashish Vaswani, Noam Shazeer, Niki Parmar, et al. (Google Brain & Google Research)",
+    "year": 2017,
+    "conference": "NeurIPS 2017",
+    "arxiv_id": "1706.03762",
+    "arxiv_url": "https://arxiv.org/abs/1706.03762",
+    "category": "深度學習架構",
+    "filename": "01_Transformer_Attention_Is_All_You_Need.md",
+    "core_problem": "解決 RNN/LSTM 無法平行運算、計算瓶頸以及長距離語意依賴遺忘（Vanishing Gradient）的問題。",
+    "key_innovations": [
+      "Self-Attention 機制",
+      "Multi-Head Attention",
+      "Positional Encoding 位置編碼",
+      "縮放點積 (Scaling Factor 1/sqrt(dk))"
+    ],
+    "exam_focus": "Self-Attention 矩陣計算維度、為什麼除以根號 dk 防止梯度飽和、位置編碼的必要性。"
+  },
+  {
+    "id": "rag",
+    "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+    "chinese_title": "檢索增強生成 (RAG 核心架構開創論文)",
+    "authors": "Patrick Lewis, Ethan Perez, Aleksandara Piktus, et al. (Facebook AI Research / Meta)",
+    "year": 2020,
+    "conference": "NeurIPS 2020",
+    "arxiv_id": "2005.11401",
+    "arxiv_url": "https://arxiv.org/abs/2005.11401",
+    "category": "RAG與向量系統",
+    "filename": "02_RAG_Retrieval_Augmented_Generation.md",
+    "core_problem": "大模型參數知識無法即時更新、容易產生事實幻覺（Hallucination）、無法存取企業私有不公開資料。",
+    "key_innovations": [
+      "Dense Passage Retrieval (DPR) 向量檢索",
+      "Parametric + Non-parametric 混合架構",
+      "端到端生成器串接"
+    ],
+    "exam_focus": "RAG 完整 Pipeline（切塊 -> 向量化 -> 向量檢索 -> Context 注入 -> 生成）、與 Fine-Tuning 成本與更新頻率之比較。"
+  },
+  {
+    "id": "lora",
+    "title": "LoRA: Low-Rank Adaptation of Large Language Models",
+    "chinese_title": "低秩適應微調 (LoRA 高效參數微調開創之作)",
+    "authors": "Edward J. Hu, Yelong Shen, Phillip Wallis, et al. (Microsoft Corporation)",
+    "year": 2021,
+    "conference": "ICLR 2022",
+    "arxiv_id": "2106.09685",
+    "arxiv_url": "https://arxiv.org/abs/2106.09685",
+    "category": "模型微調技術",
+    "filename": "03_LoRA_Low_Rank_Adaptation.md",
+    "core_problem": "全參數量微調（Full Fine-Tuning）顯存開銷龐大、難以針對不同下游任務保存多份幾十 GB 的模型權重。",
+    "key_innovations": [
+      "凍結原始權重 W0",
+      "旁路低秩矩陣分解 ΔW = B × A (秩 r << d)",
+      "推論時權重可相加合併（零額外推論延遲）"
+    ],
+    "exam_focus": "可訓練參數量大幅降低 10000 倍、顯存需求降低 3 倍、合併部署無推論延遲。"
+  },
+  {
+    "id": "cot",
+    "title": "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models",
+    "chinese_title": "思維鏈提示 (Chain-of-Thought, CoT)",
+    "authors": "Jason Wei, Xuezhi Wang, Dale Schuurmans, et al. (Google Research, Brain Team)",
+    "year": 2022,
+    "conference": "NeurIPS 2022",
+    "arxiv_id": "2201.11903",
+    "arxiv_url": "https://arxiv.org/abs/2201.11903",
+    "category": "提示工程與生成式AI",
+    "filename": "04_Chain_of_Thought_Prompting.md",
+    "core_problem": "標準提示直接要求輸出最終答案時，大模型在多步驟推理、算術題與符號邏輯題上頻繁出錯。",
+    "key_innovations": [
+      "引導模型展開中間推理步驟",
+      "Few-shot CoT (提供步驟範例)",
+      "Zero-shot CoT ('Let\\'s think step by step')"
+    ],
+    "exam_focus": "思維鏈如何激發 Reasoning 能力、湧現能力（Emergent Ability）門檻、與標準 Prompting 之差異。"
+  },
+  {
+    "id": "resnet",
+    "title": "Deep Residual Learning for Image Recognition",
+    "chinese_title": "深度殘差學習 (ResNet 解決梯度消失與網路退化)",
+    "authors": "Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun (Microsoft Research)",
+    "year": 2015,
+    "conference": "CVPR 2016 (Best Paper)",
+    "arxiv_id": "1512.03385",
+    "arxiv_url": "https://arxiv.org/abs/1512.03385",
+    "category": "深度學習架構",
+    "filename": "05_ResNet_Deep_Residual_Learning.md",
+    "core_problem": "當神經網路層數極深時，出現網路退化（Degradation Problem，深層訓練誤差反而高於淺層）與梯度消失。",
+    "key_innovations": [
+      "殘差塊（Residual Block）: H(x) = F(x) + x",
+      "捷徑連接（Shortcut / Skip Connections）",
+      "訓練可達 152 層深網"
+    ],
+    "exam_focus": "殘差跳躍連接（Skip Connection）原理、解決網路退化問題、恆等映射（Identity Mapping）。"
+  },
+  {
+    "id": "dropout",
+    "title": "Dropout: A Simple Way to Prevent Neural Networks from Overfitting",
+    "chinese_title": "Dropout 機制 (防止神經網路過擬合經典論文)",
+    "authors": "Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, et al. (University of Toronto)",
+    "year": 2014,
+    "conference": "JMLR 2014",
+    "arxiv_id": "1207.0580",
+    "arxiv_url": "https://jmlr.org/papers/v15/srivastava14a.html",
+    "category": "機器學習基礎",
+    "filename": "06_Dropout_Prevent_Overfitting.md",
+    "core_problem": "神經網路過擬合，神經元之間產生複雜的共適應性（Co-adaptation），泛化能力不足。",
+    "key_innovations": [
+      "訓練期間以機率 p 隨機將節點輸出設為 0",
+      "推論期間使用全部節點並縮放權重 (權重乘以 1-p)",
+      "近似海量子網路的集成學習（Ensemble）"
+    ],
+    "exam_focus": "Dropout 屬於正規化手段、僅在訓練期啟用、推論階段關閉並進行權重縮放。"
+  },
+  {
+    "id": "bert",
+    "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+    "chinese_title": "BERT 雙向語言表徵模型",
+    "authors": "Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova (Google AI Language)",
+    "year": 2018,
+    "conference": "NAACL 2019",
+    "arxiv_id": "1810.04805",
+    "arxiv_url": "https://arxiv.org/abs/1810.04805",
+    "category": "深度學習架構",
+    "filename": "07_BERT_Bidirectional_Transformers.md",
+    "core_problem": "傳統預訓練模型（如 GPT 為單向從左到右、ELMo 為前後向淺層拼接），無法真正達成深度雙向脈絡理解。",
+    "key_innovations": [
+      "Transformer Encoder 雙向架構",
+      "Masked Language Model (MLM, 完形填空預訓練)",
+      "Next Sentence Prediction (NSP)"
+    ],
+    "exam_focus": "BERT 屬於 Encoder-only 架構、擅長理解與分類分類；GPT 屬於 Decoder-only 擅長生成。"
+  },
+  {
+    "id": "ai_governance",
+    "title": "NIST AI Risk Management Framework (AI RMF 1.0) & 台灣 AI 基本法規範",
+    "chinese_title": "可信任 AI 治理架構與人機協作法規指引",
+    "authors": "National Institute of Standards and Technology (NIST) & 台灣國科會/數位發展部",
+    "year": 2023,
+    "conference": "NIST Special Publication 1270 / 官方指引",
+    "arxiv_id": "NIST.AI.100-1",
+    "arxiv_url": "https://www.nist.gov/itl/ai-risk-management-framework",
+    "category": "AI倫理法規",
+    "filename": "08_AI_Governance_NIST_RMF.md",
+    "core_problem": "AI 系統引發之偏見歧視、隱私侵害、黑箱不透明、智財侵權及責任歸屬模糊問題。",
+    "key_innovations": [
+      "四大核心功能：Govern (治理), Map (識別), Measure (度量), Manage (管理)",
+      "可信任 AI 核心特徵 (有效、安全、具韌性、可解釋、負責任)",
+      "Human-in-the-loop 人類最終決策問責"
+    ],
+    "exam_focus": "公部門公文書嚴禁未授權上傳公有雲、AI 不具備專利人法律主體、人類負最終法律決策責任。"
+  }
+]
