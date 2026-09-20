@@ -1,0 +1,102 @@
+[
+  {
+    "id": "1",
+    "subject": "初級科目一",
+    "category": "機器學習基礎",
+    "question": "在機器學習任務中，若希望根據房屋的坪數、屋齡與地段來預測其成交價格（連續數值），應採用下列何種模型？",
+    "options": { "A": "分群（Clustering）", "B": "迴歸（Regression）", "C": "關聯規則（Association Rule）", "D": "主成分分析（PCA）" },
+    "answer": ["B"],
+    "explanation": "預測連續數值目標屬於監督式學習中的『迴歸』任務；分類任務預測離散類別，分群與降維則多為非監督式學習。",
+    "paper": "Hastie et al. - 《The Elements of Statistical Learning》"
+  },
+  {
+    "id": "2",
+    "subject": "初級科目一",
+    "category": "模型評估指標",
+    "question": "在醫療診斷或罕見疾病篩檢情境中，最希望避免『有病卻被誤判為沒病（漏診）』的情況，此時最應優先追求哪一項評估指標的極大化？",
+    "options": { "A": "精確率（Precision）", "B": "召回率（Recall / Sensitivity）", "C": "特異度（Specificity）", "D": "準確率（Accuracy）" },
+    "answer": ["B"],
+    "explanation": "漏診代表偽陰性（False Negative, FN）。Recall = TP / (TP + FN)，當 FN 越小，Recall 越高。因此避免漏診時應優先提升 Recall。",
+    "paper": "Davis & Goadrich, ICML 2006 - 《The Relationship Between Precision-Recall and ROC Curves》"
+  },
+  {
+    "id": "3",
+    "subject": "初級科目一",
+    "category": "過擬合與正規化",
+    "question": "當神經網路在訓練集上表現極佳，但在測試集上泛化能力很差時，下列哪項手法『無法』有效減緩過擬合？",
+    "options": { "A": "加入 Dropout 機制", "B": "加入 L2 正則化（Weight Decay）", "C": "大幅增加網路隱藏層的神經元數量與深度", "D": "增加訓練資料多樣性（Data Augmentation）" },
+    "answer": ["C"],
+    "explanation": "大幅增加神經元數量與深度會提高模型容量（Capacity），反而會加劇過擬合。其餘三項皆為抑制過擬合的標準手段。",
+    "paper": "Srivastava et al., JMLR 2014 - 《Dropout: A Simple Way to Prevent Overfitting》"
+  },
+  {
+    "id": "4",
+    "subject": "初級科目二",
+    "category": "RAG架構",
+    "question": "企業在導入大型語言模型（LLM）建置知識庫時，為了降低『幻覺（Hallucination）』並補充內部最新私有資料，最常採取的低成本架構為何？",
+    "options": { "A": "從頭重新預訓練基底大模型", "B": "檢索增強生成（Retrieval-Augmented Generation, RAG）", "C": "大幅調高模型的 Temperature 參數", "D": "使用全參數量微調（Full Fine-Tuning）" },
+    "answer": ["B"],
+    "explanation": "RAG 透過向量比對先從內部庫取得文件片段作為 Context 注入 Prompt，由 LLM 整理回答，成本低且能大幅緩解幻覺。",
+    "paper": "Lewis et al., NeurIPS 2020 - 《Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks》"
+  },
+  {
+    "id": "5",
+    "subject": "初級科目二",
+    "category": "提示工程",
+    "question": "在 Prompt Engineering 中，要求模型在給出答案前先輸出中間推導步驟（如：『請一步一步思考』），此手法稱為？",
+    "options": { "A": "Zero-shot Prompting", "B": "思維鏈（Chain-of-Thought, CoT）", "C": "Prompt 注入攻擊", "D": "量化壓縮（Quantization）" },
+    "answer": ["B"],
+    "explanation": "思維鏈（CoT）引導模型展開中間步驟推理，能顯著提升複雜邏輯與算術題目的正確率。",
+    "paper": "Wei et al., NeurIPS 2022 - 《Chain-of-Thought Prompting Elicits Reasoning in Large Language Models》"
+  },
+  {
+    "id": "6",
+    "subject": "初級科目二",
+    "category": "模型參數調校",
+    "question": "在呼叫生成式 AI API 時，若希望模型生成的回答具備更高的創造力與多樣性，通常應如何調整 Temperature 參數？",
+    "options": { "A": "調低接近 0（如 0.1）", "B": "調高（如 0.8 ~ 1.0）", "C": "將 Temperature 設為負數", "D": "Temperature 與創造力無關" },
+    "answer": ["B"],
+    "explanation": "Temperature 決定輸出機率分佈平滑度。越接近 0 越偏向 Greedy 確定性輸出；調高會使低機率 Token 更有機會被選中，增加創造力與隨機性。",
+    "paper": "Ackley et al., 1985 - 《A Learning Algorithm for Boltzmann Machines》"
+  },
+  {
+    "id": "7",
+    "subject": "初級科目一",
+    "category": "特徵工程與資料前處理",
+    "question": "在特徵縮放（Feature Scaling）中，將數值特徵線性變換縮放至 區間的方法稱為？",
+    "options": { "A": "Z-score 標準化（Standardization）", "B": "最小最大值正規化（Min-Max Normalization）", "C": "主成分分析（PCA）", "D": "One-Hot 編碼" },
+    "answer": ["B"],
+    "explanation": "Min-Max Normalization 公式為 (X - Xmin) / (Xmax - Xmin)，將資料線性對齊至；Z-score 是將平均數轉為 0、標準差轉為 1。",
+    "paper": "Scikit-Learn Preprocessing Documentation"
+  },
+  {
+    "id": "8",
+    "subject": "初級科目二",
+    "category": "AI倫理與法規",
+    "question": "依據台灣國科會《人工智慧基本法（草案）》與數位發展部公部門 AI 應用指引，下列哪項敘述為正確的核心原則？",
+    "options": { "A": "公務機關可直接將高度機密公文上傳至未授權之公有雲 AI 模型分析", "B": "AI 系統產出之內容應具備透明性與可解釋性，並由人類負最終決策責任", "C": "生成式 AI 生成之內容具有絕對法律權利，可直接列為專利發明人", "D": "導入 AI 應完全取代人類審查，不得保留人工覆核環節" },
+    "answer": ["B"],
+    "explanation": "AI 倫理與各國指引一致強調 Human-in-the-loop（人機協作/人為最終問責），AI 不具備法律主體專利人地位，機密公文亦嚴禁上傳未授權公有雲。",
+    "paper": "台灣國科會《人工智慧基本法（草案）》& NIST AI RMF 1.0"
+  },
+  {
+    "id": "9",
+    "subject": "初級科目一",
+    "category": "深度學習基礎",
+    "question": "在卷積神經網路（CNN）中，『池化層（Pooling Layer，如 Max Pooling）』的主要功能為何？",
+    "options": { "A": "計算損失函數的梯度", "B": "降低特徵維度、減少參數量並保留主要特徵", "C": "將連續數值轉換為文字標籤", "D": "取代 Softmax 進行最後分類" },
+    "answer": ["B"],
+    "explanation": "池化層用於降低特徵圖（Feature Map）空間維度，減少計算量與防止過擬合，同時具備一定的平移不變性。",
+    "paper": "LeCun et al., 1998 - 《Gradient-Based Learning Applied to Document Recognition》"
+  },
+  {
+    "id": "10",
+    "subject": "初級科目二",
+    "category": "模型微調技術",
+    "question": "在大型語言模型的高效微調技術中，LoRA（Low-Rank Adaptation）的核心原理為何？",
+    "options": { "A": "凍結預訓練權重，透過引入低秩矩陣分解來訓練額外參數", "B": "將模型參數量修剪掉 90% 來提升推論速度", "C": "直接在提示詞前端拼接人工撰寫的樣板", "D": "將模型權重全數轉為 1-bit 二值化" },
+    "answer": ["A"],
+    "explanation": "LoRA 凍結原有大模型權重 W，透過旁路學習兩個低秩分解矩陣 A 與 B（ΔW = B × A），大幅降低微調所需的 GPU 顯存與可訓練參數量。",
+    "paper": "Hu et al., ICLR 2022 - 《LoRA: Low-Rank Adaptation of Large Language Models》"
+  }
+]
