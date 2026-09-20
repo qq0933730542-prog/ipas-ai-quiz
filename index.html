@@ -3,32 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>iPAS AI 應用規劃師 - 專屬刷題庫</title>
+  <title>iPAS AI 應用規劃師 - 專屬刷題與學習分析庫</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-24">
 
-  <!-- ==================== 1. 密碼與驗證碼鎖定層 ==================== -->
-  <div id="authGate" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+  <!-- ==================== 1. 密碼與驗證碼鎖定層（隱蔽無提示） ==================== -->
+  <div id="authGate" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
       <div class="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 mx-auto mb-4 text-xl">
         🔒
       </div>
-      <h2 class="text-base font-bold text-center text-slate-900 mb-1">私人備考題庫驗證</h2>
-      <p class="text-xs text-center text-slate-500 mb-5">請輸入通行密碼與驗證碼以解鎖內容</p>
+      <h2 class="text-base font-bold text-center text-slate-900 mb-1">私人備考系統</h2>
+      <p class="text-xs text-center text-slate-500 mb-5">請輸入授權通行密碼與動態驗證碼</p>
 
-      <!-- 密碼輸入 -->
+      <!-- 密碼輸入（無任何密碼明文提示） -->
       <div class="mb-3">
         <label class="block text-[11px] font-semibold text-slate-700 mb-1">通行密碼</label>
-        <input type="password" id="inputPassword" placeholder="預設密碼 ipas2026" onkeydown="if(event.key==='Enter') handleUnlock()" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <input type="password" id="inputPassword" placeholder="請輸入密碼..." onkeydown="if(event.key==='Enter') handleUnlock()" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
       </div>
 
-      <!-- 動態驗證碼輸入與展示 -->
+      <!-- 動態安全驗證碼 -->
       <div class="mb-4">
         <label class="block text-[11px] font-semibold text-slate-700 mb-1">安全驗證碼</label>
         <div class="flex items-center gap-2">
-          <input type="text" id="inputCaptcha" placeholder="輸入右側 4 碼" maxlength="4" onkeydown="if(event.key==='Enter') handleUnlock()" class="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          <div id="captchaDisplay" onclick="refreshCaptcha()" title="點擊重新產生驗證碼" class="cursor-pointer select-none bg-slate-100 border border-slate-300 rounded-lg px-3 py-2 font-mono text-sm font-bold tracking-widest text-indigo-700 line-through decoration-slate-400">
+          <input type="text" id="inputCaptcha" placeholder="輸入 4 碼" maxlength="4" onkeydown="if(event.key==='Enter') handleUnlock()" class="flex-1 text-xs border border-slate-300 rounded-lg px-3 py-2 uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <div id="captchaDisplay" onclick="refreshCaptcha()" title="點擊重新整理驗證碼" class="cursor-pointer select-none bg-slate-100 border border-slate-300 rounded-lg px-3 py-1.5 font-mono text-sm font-bold tracking-widest text-indigo-700 line-through decoration-slate-400">
             ----
           </div>
           <button type="button" onclick="refreshCaptcha()" class="text-slate-500 hover:text-slate-800 p-1 text-sm font-bold">
@@ -40,12 +40,12 @@
       <div id="authErrorMsg" class="hidden text-[11px] text-rose-600 font-medium mb-3 p-2 bg-rose-50 rounded-lg border border-rose-200"></div>
 
       <button id="btnUnlock" onclick="handleUnlock()" class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-semibold py-2.5 rounded-lg transition shadow-sm cursor-pointer">
-        解鎖進入題庫
+        驗證並進入題庫
       </button>
     </div>
   </div>
 
-  <!-- ==================== 2. 主應用程式（解鎖後呈現） ==================== -->
+  <!-- ==================== 2. 主應用程式 ==================== -->
   <div id="mainApp" class="hidden">
     <!-- 頂部導覽列 -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
@@ -58,6 +58,10 @@
           </div>
         </div>
         <div class="flex items-center space-x-2">
+          <!-- 做題分析按鈕 -->
+          <button onclick="openAnalyticsModal()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium px-3 py-1.5 rounded-lg flex items-center gap-1 border border-indigo-200 transition">
+            📊 <span>做題分析</span>
+          </button>
           <button id="openKeyModal" onclick="openKeySettings()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1 border border-slate-300">
             🔑 <span id="keyStatusText">AI Key</span>
           </button>
@@ -68,7 +72,7 @@
       </div>
     </header>
 
-    <!-- 功能主選單 -->
+    <!-- 功能選單列 -->
     <div class="bg-indigo-900 text-white py-3 shadow-inner">
       <div class="max-w-4xl mx-auto px-4 flex flex-wrap items-center justify-between gap-2 text-xs">
         <div class="flex flex-wrap items-center gap-2">
@@ -91,7 +95,7 @@
       </div>
     </div>
 
-    <!-- 主內容容器 -->
+    <!-- 主內容區 -->
     <main class="max-w-4xl mx-auto px-4 mt-6">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div class="flex flex-wrap gap-1.5 text-xs">
@@ -102,7 +106,7 @@
         </div>
 
         <div class="text-xs text-slate-500 font-medium">
-          當前進度：答對 <span id="statCorrect" class="text-emerald-600 font-bold">0</span> / 作答 <span id="statTotal" class="font-bold">0</span>
+          作答概況：答對 <span id="statCorrect" class="text-emerald-600 font-bold">0</span> / 作答 <span id="statTotal" class="font-bold">0</span>
         </div>
       </div>
 
@@ -128,7 +132,7 @@
 
       <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs bg-slate-50">
         <div class="bg-white border border-slate-200 p-3 rounded-xl shadow-xs text-slate-700">
-          你好！我是你的 iPAS AI 備考即時助教。你可以隨時問我任何 AI 概念、公式辨析或歷屆考點。
+          你好！我是你的 iPAS AI 備考即時助教。你可以隨時問我任何觀念、名詞或請我抓重點。
         </div>
       </div>
 
@@ -141,8 +145,78 @@
     </div>
   </div>
 
+  <!-- ==================== 3. 做題分析與弱點診斷彈窗 ==================== -->
+  <div id="analyticsModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">📊</span>
+          <h3 class="text-base font-bold text-slate-900">做題學習分析與弱點診斷</h3>
+        </div>
+        <button onclick="closeAnalyticsModal()" class="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 space-y-5 text-xs pr-1">
+        <!-- 數據卡 -->
+        <div class="grid grid-cols-4 gap-3 text-center">
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <span class="text-slate-400 text-[10px] block">作答題數</span>
+            <span id="anTotal" class="text-lg font-bold text-slate-800">0</span>
+          </div>
+          <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+            <span class="text-emerald-600 text-[10px] block">答對題數</span>
+            <span id="anCorrect" class="text-lg font-bold text-emerald-700">0</span>
+          </div>
+          <div class="bg-rose-50 p-3 rounded-xl border border-rose-200">
+            <span class="text-rose-600 text-[10px] block">答錯題數</span>
+            <span id="anWrong" class="text-lg font-bold text-rose-700">0</span>
+          </div>
+          <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-200">
+            <span class="text-indigo-600 text-[10px] block">整體正確率</span>
+            <span id="anAccuracy" class="text-lg font-bold text-indigo-700">0%</span>
+          </div>
+        </div>
+
+        <!-- 各考點掌握度分析 -->
+        <div>
+          <h4 class="font-bold text-slate-800 mb-2 flex items-center justify-between">
+            <span>📚 各考點領域掌握度</span>
+            <span class="text-[10px] font-normal text-slate-400">依作答紀錄即時運算</span>
+          </h4>
+          <div id="categoryBars" class="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div class="text-slate-400 text-center py-4">尚無足夠作答數據，請多練習幾題！</div>
+          </div>
+        </div>
+
+        <!-- AI 弱點診斷建議區塊 -->
+        <div class="border border-indigo-100 bg-indigo-50/40 p-4 rounded-xl">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-bold text-indigo-900 flex items-center gap-1.5">
+              <span>🤖</span> AI 考前處方籤與複習指引
+            </h4>
+            <button onclick="generateAIWeaknessReport()" id="btnGenAIReport" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg text-[11px] font-semibold transition">
+              一鍵生成 AI 診斷
+            </button>
+          </div>
+          <div id="aiWeaknessContent" class="text-slate-600 leading-relaxed whitespace-pre-wrap text-[11px]">
+            點擊右上角按鈕，AI 會自動根據你的錯題章節與答題弱項，為你量身打造備考重點攻略。
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center border-t border-slate-100 pt-3 mt-4">
+        <button onclick="resetAllStats()" class="text-rose-600 hover:text-rose-700 text-[11px]">
+          🔄 重置所有作答紀錄
+        </button>
+        <button onclick="closeAnalyticsModal()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">
+          關閉
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- API Key 設定彈窗 -->
-  <div id="keyModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+  <div id="keyModal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center hidden p-4">
     <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200">
       <h3 class="text-base font-bold text-slate-900 mb-2">🔑 設定 Gemini API Key</h3>
       <p class="text-xs text-slate-500 mb-4 leading-relaxed">
@@ -156,14 +230,14 @@
     </div>
   </div>
 
-  <!-- ==================== 3. 核心邏輯腳本 ==================== -->
+  <!-- ==================== 4. 核心邏輯腳本 ==================== -->
   <script>
-    // 通行密碼設定
+    // 通行密碼（此處為後台常數，畫面上絕不顯示）
     const CORRECT_PASSWORD = "ipas2026";
     let currentCaptcha = "";
     let isMemoryAuthed = false;
 
-    // 跨瀏覽器安全 Storage 讀寫
+    // 安全 Storage 讀寫
     function safeStorageGet(key) {
       try { return sessionStorage.getItem(key); } catch (e) { return null; }
     }
@@ -205,7 +279,6 @@
       }
     }
 
-    // 解鎖點擊事件
     function handleUnlock() {
       const pwdInput = document.getElementById("inputPassword");
       const captchaInput = document.getElementById("inputCaptcha");
@@ -230,7 +303,6 @@
         return;
       }
 
-      // 驗證成功
       err.classList.add("hidden");
       safeStorageSet("IPAS_APP_AUTH", "true");
       isMemoryAuthed = true;
@@ -243,7 +315,7 @@
       checkAuthStatus();
     }
 
-    // ==================== 題庫與主要功能 ====================
+    // ==================== 題庫與分析數據 ====================
     const defaultQuestions = [
       {
         id: "L11-001",
@@ -253,7 +325,7 @@
         options: { "A": "分群（Clustering）", "B": "迴歸（Regression）", "C": "關聯規則（Association Rule）", "D": "主成分分析（PCA）" },
         answer: ["B"],
         explanation: "預測連續數值目標屬於監督式學習中的『迴歸』任務；分類任務預測離散類別，分群與降維則多為非監督式學習。",
-        concept_card: { title: "迴歸 vs 分類", points: ["迴歸：目標為連續數值（如價格、溫度）。", "分類：目標為離散標籤（如合格/不合格）。"] }
+        concept_card: { title: "迴歸 vs 分類", points: ["迴歸：連續數值目標。", "分類：離散類別標籤。"] }
       },
       {
         id: "L12-001",
@@ -262,16 +334,19 @@
         question: "企業在導入大型語言模型（LLM）建置內部知識庫時，為了降低『幻覺（Hallucination）』並補充最新專有資料，最常優先採取的架構為何？",
         options: { "A": "從頭重新預訓練基底模型", "B": "檢索增強生成（Retrieval-Augmented Generation, RAG）", "C": "大幅調高模型的 Temperature 參數", "D": "改用非監督式分群" },
         answer: ["B"],
-        explanation: "RAG 透過向量檢索先從企業內部資料庫找出相關內容，再將其作為 Context 注入 Prompt 交給 LLM 回答，成本低且能大幅緩解幻覺。",
-        concept_card: { title: "RAG 核心要素", points: ["Chunking（切塊）與 Embeddings（向量化）", "向量資料庫相似度比對（Top-K 檢索）", "提示詞上下文拼接（Augmented Prompt）"] }
+        explanation: "RAG 透過向量檢索先從內部庫取得文件片段作為 Context，再交給 LLM 生成回答，能有效緩解幻覺。",
+        concept_card: { title: "RAG 核心要素", points: ["文件 Chunking & 向量化", "向量相似度 Top-K 比對", "Prompt 脈絡增強"] }
       }
     ];
 
     let allQuestions = [...defaultQuestions];
     let displayQuestions = [...defaultQuestions];
     let wrongQuestions = [];
+    let topicAnalytics = {}; // 考點分析紀錄 { "RAG": { total: 5, correct: 3 } }
+
     try {
       wrongQuestions = JSON.parse(localStorage.getItem("IPAS_WRONG_QUESTIONS") || "[]");
+      topicAnalytics = JSON.parse(localStorage.getItem("IPAS_TOPIC_STATS") || "{}");
     } catch(e) {}
 
     let currentFilter = "all";
@@ -279,6 +354,17 @@
     let timerInterval = null;
 
     function initApp() {
+      // 根據 topicAnalytics 重建總計數據
+      let tot = 0, cor = 0;
+      Object.values(topicAnalytics).forEach(stat => {
+        tot += stat.total;
+        cor += stat.correct;
+      });
+      answeredStats = { correct: cor, total: tot };
+
+      document.getElementById("statCorrect").innerText = answeredStats.correct;
+      document.getElementById("statTotal").innerText = answeredStats.total;
+
       renderQuestions();
       updateWrongBadge();
       updateSummary();
@@ -317,7 +403,7 @@
         options: opts,
         answer: ans,
         explanation: raw.explanation || "暫無官方解析說明。",
-        concept_card: raw.concept_card || { title: raw.topic || "考點速記", points: ["請掌握核心定義與名詞辨析。"] }
+        concept_card: raw.concept_card || { title: raw.topic || "考點速記", points: ["請理解核心觀念與名詞。"] }
       };
     }
 
@@ -490,6 +576,16 @@
 
       const isCorrect = JSON.stringify(selected) === JSON.stringify(q.answer.sort());
 
+      // 累加分析數據
+      const cat = q.category || "綜合題型";
+      if (!topicAnalytics[cat]) topicAnalytics[cat] = { total: 0, correct: 0 };
+      topicAnalytics[cat].total++;
+      if (isCorrect) topicAnalytics[cat].correct++;
+
+      try {
+        localStorage.setItem("IPAS_TOPIC_STATS", JSON.stringify(topicAnalytics));
+      } catch(e) {}
+
       answeredStats.total++;
       if (isCorrect) {
         answeredStats.correct++;
@@ -510,6 +606,115 @@
       document.getElementById("statTotal").innerText = answeredStats.total;
     }
 
+    // ==================== 做題分析 Modal 邏輯 ====================
+    function openAnalyticsModal() {
+      document.getElementById("analyticsModal").classList.remove("hidden");
+
+      const tot = answeredStats.total;
+      const cor = answeredStats.correct;
+      const wrg = tot - cor;
+      const acc = tot > 0 ? Math.round((cor / tot) * 100) : 0;
+
+      document.getElementById("anTotal").innerText = tot;
+      document.getElementById("anCorrect").innerText = cor;
+      document.getElementById("anWrong").innerText = wrg;
+      document.getElementById("anAccuracy").innerText = `${acc}%`;
+
+      renderCategoryBars();
+    }
+
+    function closeAnalyticsModal() {
+      document.getElementById("analyticsModal").classList.add("hidden");
+    }
+
+    function renderCategoryBars() {
+      const container = document.getElementById("categoryBars");
+      const keys = Object.keys(topicAnalytics);
+
+      if (keys.length === 0) {
+        container.innerHTML = `<div class="text-slate-400 text-center py-4">尚無足夠作答數據，請先做幾道題目！</div>`;
+        return;
+      }
+
+      container.innerHTML = "";
+      keys.forEach(cat => {
+        const item = topicAnalytics[cat];
+        const pct = Math.round((item.correct / item.total) * 100);
+        let colorClass = "bg-emerald-500";
+        if (pct < 60) colorClass = "bg-rose-500";
+        else if (pct < 75) colorClass = "bg-amber-500";
+
+        const div = document.createElement("div");
+        div.className = "space-y-1";
+        div.innerHTML = `
+          <div class="flex justify-between items-center text-[11px]">
+            <span class="font-medium text-slate-700">${cat}</span>
+            <span class="text-slate-500">${pct}% (${item.correct}/${item.total})</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+            <div class="${colorClass} h-2 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // 一鍵生成 AI 弱點診斷報告
+    async function generateAIWeaknessReport() {
+      let apiKey = null;
+      try { apiKey = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
+      if (!apiKey) {
+        alert("請先於右上角設定 Gemini API Key！");
+        openKeySettings();
+        return;
+      }
+
+      const reportBox = document.getElementById("aiWeaknessContent");
+      const btn = document.getElementById("btnGenAIReport");
+      btn.innerText = "⏳ 正在聯網診斷中...";
+      reportBox.innerText = "AI 正在分析你的錯題模式與各章節掌握度，請稍候...";
+
+      const statsSummary = JSON.stringify(topicAnalytics, null, 2);
+      const wrongTopics = wrongQuestions.slice(0, 10).map(q => `[${q.category}] ${q.question}`).join("\n");
+
+      const prompt = `你是 iPAS AI 應用規劃師的專業教練。以下是一位考生的做題紀錄與弱點分佈：
+作答統計：
+${statsSummary}
+
+近期的部分錯題：
+${wrongTopics || '暫無錯題'}
+
+請為他產生一份精確且實用的「考前衝刺弱點處方籤」：
+1. 核心弱點診斷（指出最危險、最容易拉低分數的 1~2 個模組）
+2. 常考陷阱提醒（這幾個弱點模組在 iPAS 最愛考哪些關鍵差異？）
+3. 接下來 7 天的精準複習行動指引。
+請用繁體中文、語氣嚴謹且激勵人心，排版清晰條理分明。`;
+
+      try {
+        const res = await callGemini(prompt, apiKey);
+        reportBox.innerText = res;
+        btn.innerText = "✅ 診斷完成";
+      } catch (err) {
+        reportBox.innerText = "生成失敗，請檢查網路或 API Key 是否正常。";
+        btn.innerText = "重新生成";
+      }
+    }
+
+    function resetAllStats() {
+      if (confirm("確定要重置所有做題紀錄與錯題本嗎？")) {
+        topicAnalytics = {};
+        wrongQuestions = [];
+        answeredStats = { correct: 0, total: 0 };
+        try {
+          localStorage.removeItem("IPAS_TOPIC_STATS");
+          localStorage.removeItem("IPAS_WRONG_QUESTIONS");
+        } catch(e) {}
+        initApp();
+        openAnalyticsModal();
+      }
+    }
+
+    // ==================== AI 整合函式 ====================
     async function askAI(qId) {
       let apiKey = null;
       try { apiKey = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
@@ -571,7 +776,6 @@
       }
     }
 
-    // 對話抽屜邏輯
     function toggleChatDrawer() {
       let apiKey = null;
       try { apiKey = localStorage.getItem("GEMINI_API_KEY"); } catch(e) {}
@@ -622,7 +826,6 @@
       return id;
     }
 
-    // API Key 設定彈窗
     function openKeySettings() { document.getElementById("keyModal").classList.remove("hidden"); }
     function closeKeySettings() { document.getElementById("keyModal").classList.add("hidden"); }
     function saveKeySettings() {
